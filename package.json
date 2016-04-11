@@ -1,0 +1,21 @@
+{
+  "name": "dzzzTelegram",
+  "version": "0.0.1",
+  "description": "A sample telegram bot for Night game Dozor",
+  "main": "app.js",
+  "scripts": {
+    "start": "screen -S dzzzr_bot -d -m node app.js &"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.17.0",
+    "request": "^2.67.0",
+    "cheerio": "^0.19.0",
+    "iconv-lite": "0.4.12",
+    "log4js": "*",
+    "sinon": "*",
+    "iconv":"*"
+  },
+  "repository": {},
+  "author": "Vbyec",
+  "license": "MIT"
+}
