@@ -1,8 +1,14 @@
 var BotClass = require('./bot'),
-    ProxyFactory = require('./proxy_factory')();
+	ProxyFactory = require('./proxy_factory')(),
+	fs = require('fs');
+
 ProxyFactory.init().then(function () {
-    var y_dzzzr_bot = BotClass('team_config/y_config.json', ProxyFactory);
-        rail_dzzzr_bot = BotClass('team_config/rail_config.json', ProxyFactory),
-        lnp_dzzzr_bot = BotClass('team_config/lnp_config.json', ProxyFactory);
+	fs.readdir('team_config/', function (error, files) {
+		files.forEach(function (file) {
+			if (file.match(/.*.json$/)) {
+				BotClass('team_config/' + file, ProxyFactory);
+			}
+		});
+	});
 });
 
