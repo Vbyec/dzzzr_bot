@@ -1,4 +1,4 @@
-var BotClass = function (configuration_file,ProxyFactory) {
+var BotClass = function (configuration_file, ProxyFactory) {
 
 	var fs = require('fs'),
 		configuration = JSON.parse(fs.readFileSync(configuration_file)),
@@ -94,8 +94,8 @@ var BotClass = function (configuration_file,ProxyFactory) {
 			bot.reply(msg, e.message);
 		}
 	});
-	fs.accessSync('./engines/'+configuration.engine+".js", fs.F_OK);
-	var currentEngine = require('./engines/'+configuration.engine+".js")(configuration, bot,ProxyFactory);
+	fs.accessSync('./engines/' + configuration.engine + ".js", fs.F_OK);
+	var currentEngine = require('./engines/' + configuration.engine + ".js")(configuration, bot, ProxyFactory);
 	bot.onText(currentEngine.code_regex, function (msg, match) {
 		logger.info("code matched " + msg.text);
 		try {
@@ -247,9 +247,9 @@ var BotClass = function (configuration_file,ProxyFactory) {
 		}
 	});
 
-if(bot.registered_chat_ids[0]){
-	//bot.sendMessage(bot.registered_chat_ids[0], "Bot started");
-}
+	if (bot.registered_chat_ids[0]) {
+		//bot.sendMessage(bot.registered_chat_ids[0], "Bot started");
+	}
 	currentEngine.init();
 	logger.info("Bot started.");
 	return this;

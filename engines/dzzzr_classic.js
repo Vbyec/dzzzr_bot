@@ -2,7 +2,7 @@ var iconv = require('iconv-lite'),
 	cheerio = require('cheerio');
 iconv.skipDecodeWarning = true;
 
-var ClassicEngine = function (configuration, bot,ProxyFactory) {
+var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	var request = require('request').defaults({
 		jar: true,
 		//proxy:"http://"+ProxyFactory.get(),
@@ -39,12 +39,12 @@ var ClassicEngine = function (configuration, bot,ProxyFactory) {
 
 	this.init = function () {
 		this.login(function (msg) {
-			console.log(configuration.bot_name+" "+msg);
+			console.log(configuration.bot_name + " " + msg);
 		});
 	};
 
 	this.login = function (callback) {
-		var old_this = this;
+		var self = this;
 		request.post(
 			{
 				url: "http://classic.dzzzr.ru/moscow/",
@@ -57,18 +57,18 @@ var ClassicEngine = function (configuration, bot,ProxyFactory) {
 			}, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
 					body = iconv.decode(body, 'win1251');
-					old_this.authorised = !!body.match("Здравствуйте, " + configuration.classic.login);
-					callback(old_this.authorised);
-				}else{
+					self.authorised = !!body.match("Здравствуйте, " + configuration.classic.login);
+					callback(self.authorised);
+				} else {
 					//request.defaults({proxy:"http://"+ProxyFactory.get()});
-					//old_this.login(callback);
+					//self.login(callback);
 					//console.log('error');
 				}
 			}
 		);
 	};
 	this.sendCode = function (code, callback) {
-		var old_this = this;
+		var self = this;
 		request.post(
 			{
 				uri: "http://classic.dzzzr.ru/moscow/go/",
@@ -81,11 +81,11 @@ var ClassicEngine = function (configuration, bot,ProxyFactory) {
 				var response_code = response.request.uri.search.match(/&err=(\d{1,2})/)[1];
 				if (!error && response.statusCode == 200) {
 					body = iconv.decode(body, 'win1251');
-					old_this.getLevel(body);
-					if (old_this.response_codes[response_code]) {
-						callback(old_this.response_codes[response_code]);
+					self.getLevel(body);
+					if (self.response_codes[response_code]) {
+						callback(self.response_codes[response_code]);
 					} else {
-						callback(old_this.getAnswer(body));
+						callback(self.getAnswer(body));
 					}
 				}
 			}
@@ -132,14 +132,14 @@ var ClassicEngine = function (configuration, bot,ProxyFactory) {
 		return result;
 	};
 	this.getPage = function (callback) {
-		var old_this = this;
+		var self = this;
 		request.get({
 			url: "http://classic.dzzzr.ru/moscow/go",
 			encoding: 'binary'
 		}, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				body = iconv.decode(body, 'win1251');
-				old_this.getLevel(body);
+				self.getLevel(body);
 				callback(body);
 			}
 		});
