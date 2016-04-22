@@ -11,7 +11,7 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 			Referer: "http://classic.dzzzr.ru/moscow/go"
 		}, auth: {
 			user: configuration.classic.http_login,
-			pass: configuration.classic.http_password
+			pass: configuration.classic.pin
 		}
 	});
 	this.response_codes = {
@@ -33,11 +33,12 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	};
 	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^!\..*)/i;
 	this.location_regex = /\d{2}\.\d{4,8}.{1,3}\d{2}\.\d{4,8}/i;
-	this.name = 'Classic';
+	this.name = 'classic';
 	this.level = 0;
 	this.authorised = 0;
 
 	this.init = function () {
+		bot.man_list.push("/set_pin - Устанавливает пин на текущую игру.");
 		this.login(function (msg) {
 			console.log(configuration.bot_name + " " + msg);
 		});

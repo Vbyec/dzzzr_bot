@@ -211,11 +211,11 @@ var BotClass = function (configuration_file, ProxyFactory) {
 						});
 						bot.reply(msg, text);
 						break;
-					case 'set_light_pin':
+					case 'set_pin':
 						logger.info("/" + command + " command handled.");
 						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-						configuration.light.pin = arg.trim();
-						bot.reply(msg, "Новый пин:" + configuration.light.pin);
+						configuration[currentEngine.name].pin = arg.trim();
+						bot.reply(msg, "Новый пин:" + configuration[currentEngine.name].pin);
 						break;
 					case 'get_light_url':
 						logger.info("/" + command + " command handled.");
