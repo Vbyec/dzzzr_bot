@@ -145,6 +145,14 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 			}
 		});
 	};
+	this.updatePin = function () {
+		request.defaults({
+			auth: {
+				user: configuration.classic.http_login,
+				pass: configuration.classic.pin
+			}
+		});
+	};
 	return this;
 };
 

@@ -215,6 +215,9 @@ var BotClass = function (configuration_file, ProxyFactory) {
 						logger.info("/" + command + " command handled.");
 						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
 						configuration[currentEngine.name].pin = arg.trim();
+						if (currentEngine.hasOwnProperty("updatePin")) {
+							currentEngine.updatePin();
+						}
 						bot.reply(msg, "Новый пин:" + configuration[currentEngine.name].pin);
 						break;
 					case 'get_light_url':
