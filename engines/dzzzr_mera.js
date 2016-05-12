@@ -2,15 +2,16 @@ var iconv = require('iconv-lite'),
 	cheerio = require('cheerio');
 iconv.skipDecodeWarning = true;
 
-var ClassicEngine = function (configuration) {
+var ClassicEngine = function (configuration,bot) {
 		request = require('request').defaults({
 			jar: true,
 			followAllRedirects: true,
 			headers: {
-				Referer: "http://mera.dozormsk.com/222ny/index.php"
+				Referer: "http://mera.dozormsk.com/232p/index.php"
 			}
 		});
 		this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^!\..*)/i;
+		this.location_regex = /\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/i;
 		this.name = 'Mera';
 		this.level = 0;
 		this.authorised = 0;
@@ -43,7 +44,7 @@ var ClassicEngine = function (configuration) {
 			var old_this = this;
 			request.post(
 				{
-					uri: "http://mera.dozormsk.com/222ny/index.php",
+					uri: "http://mera.dozormsk.com/232p/index.php",
 					encoding: 'binary',
 					form: {
 						code: code,
@@ -80,7 +81,7 @@ var ClassicEngine = function (configuration) {
 		};
 		this.getPage = function (callback) {
 			request.get({
-				url: "http://mera.dozormsk.com/222ny/index.php",
+				url: "http://mera.dozormsk.com/232p/index.php",
 				encoding: 'binary'
 			}, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
