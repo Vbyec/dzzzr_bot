@@ -14,11 +14,16 @@ var ClassicEngine = function (configuration) {
 		this.name = 'Mera';
 		this.level = 0;
 		this.authorised = 0;
+		this.init = function () {
+			this.login(function (msg) {
+				console.log(configuration.bot_name + " " + msg);
+			});
+		};
 		this.login = function (callback) {
 			var old_this = this;
 			request.post(
 				{
-					url: "http://mera.dozormsk.com/222ny/index.php",
+					url: "http://mera.dozormsk.com/232p/index.php",
 					encoding: 'binary',
 					form: {
 						action: "auth",
