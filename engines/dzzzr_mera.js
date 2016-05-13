@@ -69,11 +69,11 @@ var ClassicEngine = function (configuration,bot) {
 			var result = [];
 			var sector = {name: 'Обычные коды', list: []};
 			$ = cheerio.load(page);
-			$('.code_not_entered').each(function (index, elem) {
+			$('.code_entered,.code_not_entered').each(function (index, elem) {
 				sector.list.push({
 					index: index + 1,
 					difficult: $(elem).text().trim(),
-					done: 0
+					done: $(elem).hasClass('code_entered')
 				});
 			});
 			result.push(sector);
