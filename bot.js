@@ -218,6 +218,7 @@ var BotClass = function (configuration_file, ProxyFactory) {
 					case 'set_pin':
 						logger.info("/" + command + " command handled.");
 						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
+						assertNotEmpty(arg.trim(), "Не указан пин");
 						configuration[currentEngine.name].pin = arg.trim();
 						if (currentEngine.hasOwnProperty("updatePin")) {
 							currentEngine.updatePin();
@@ -255,7 +256,10 @@ var BotClass = function (configuration_file, ProxyFactory) {
 	});
 
 	if (bot.registered_chat_ids[0]) {
-		//bot.sendMessage(bot.registered_chat_ids[0], "Bot started");
+		bot.registered_chat_ids.forEach(function (chat_id) {
+			bot.sendMessage(chat_id, "Bot started");
+		})
+
 	}
 	currentEngine.init();
 	logger.info("Bot started.");

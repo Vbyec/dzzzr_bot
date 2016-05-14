@@ -3,17 +3,19 @@ var iconv = require('iconv-lite'),
 iconv.skipDecodeWarning = true;
 
 var ClassicEngine = function (configuration, bot, ProxyFactory) {
-	var request = require('request').defaults({
-		jar: true,
-		//proxy:"http://"+ProxyFactory.get(),
-		followAllRedirects: true,
-		headers: {
-			Referer: "http://classic.dzzzr.ru/moscow/go"
-		}, auth: {
-			user: configuration.classic.http_login,
-			pass: configuration.classic.pin
-		}
-	});
+	this.request = {};
+	this.setRequest = function () {
+		this.request = require('request').defaults({
+			jar: true,
+			followAllRedirects: true,
+			headers: {
+				Referer: "http://classic.dzzzr.ru/moscow/go"
+			}, auth: {
+				user: configuration.classic.http_login,
+				pass: configuration.classic.pin
+			}
+		})
+	};
 	this.response_codes = {
 		1: "Игра не началась",
 		2: "Неверный PIN",
@@ -39,6 +41,7 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 
 	this.init = function () {
 		bot.man_list.push("/set_pin - Устанавливает пин на текущую игру.");
+		this.setRequest();
 		this.login(function (msg) {
 			console.log(configuration.bot_name + " " + msg);
 		});
@@ -46,7 +49,7 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 
 	this.login = function (callback) {
 		var self = this;
-		request.post(
+		this.request.post(
 			{
 				url: "http://classic.dzzzr.ru/moscow/",
 				encoding: 'binary',
@@ -70,7 +73,7 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	};
 	this.sendCode = function (code, callback) {
 		var self = this;
-		request.post(
+		this.request.post(
 			{
 				uri: "http://classic.dzzzr.ru/moscow/go/",
 				encoding: 'binary',
@@ -134,24 +137,19 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	};
 	this.getPage = function (callback) {
 		var self = this;
-		request.get({
+		this.request.get({
 			url: "http://classic.dzzzr.ru/moscow/go",
 			encoding: 'binary'
 		}, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				body = iconv.decode(body, 'win1251');
-				self.getLevel(body);
+				//self.getLevel(body);
 				callback(body);
 			}
 		});
 	};
 	this.updatePin = function () {
-		request.defaults({
-			auth: {
-				user: configuration.classic.http_login,
-				pass: configuration.classic.pin
-			}
-		});
+		this.setRequest();
 	};
 	return this;
 };
