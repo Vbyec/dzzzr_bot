@@ -30,7 +30,6 @@ var BotClass = function (configuration_file, ProxyFactory) {
 		"/remove_excluded -  Убирает команду из запрещенных."];
 
 	bot.help_list = [
-		"!. - Вбивает присланный нестандартный код в движок",
 		"/list - Выводит список оставшихся кодов.",
 		"/help - Выводит эту информацию "];
 	bot.registered_chat_ids = configuration.registered_chat_ids;
@@ -96,23 +95,28 @@ var BotClass = function (configuration_file, ProxyFactory) {
 	});
 	fs.accessSync('./engines/' + configuration.engine + ".js", fs.F_OK);
 	var currentEngine = require('./engines/' + configuration.engine + ".js")(configuration, bot, ProxyFactory);
+	/** Все равно пока не работает
+	 bot.onText(/^!(.*)/, function (msg, match) {
+		assertNotEmpty(bot.registered_chat_ids.indexOf(msg.chat.id) > -1, "Не зарегистрированный чат.");
+		var command = match[1];
+		if (bot.allow_code) {
+			if (command.length > 2) {
+				currentEngine.sendCode(command, function (response) {
+					bot.reply(msg, response);
+				});
+			}
+		}
+	});
+	 **/
 	bot.onText(currentEngine.code_regex, function (msg, match) {
 		logger.info("code matched " + msg.text);
 		try {
 			assertNotEmpty(bot.registered_chat_ids.indexOf(msg.chat.id) > -1, "Не зарегистрированный чат.");
-			var command, standard_code = true;
-			if (!!match[0].match(/^!\..*/)) {
-				standard_code = false;
-				command = match[0].toLowerCase().substring(2);
-			} else {
-				command = match[0].toLowerCase().replace('д', 'd').replace('р', 'r');
-			}
-			if (bot.allow_code) {
-				if (command.length > 2 || !standard_code) {
-					currentEngine.sendCode(command, function (response) {
-						bot.reply(msg, response);
-					});
-				}
+			var command = match[0].toLowerCase().replace('д', 'd').replace('р', 'r');
+			if (bot.allow_code && command.length > 2) {
+				currentEngine.sendCode(command, function (response) {
+					bot.reply(msg, response);
+				});
 			}
 		}
 		catch (e) {
