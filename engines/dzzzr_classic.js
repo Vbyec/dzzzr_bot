@@ -4,6 +4,7 @@ iconv.skipDecodeWarning = true;
 
 var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	this.request = {};
+	this.bot = bot;
 	this.setRequest = function () {
 		this.request = require('request').defaults({
 			jar: true,
@@ -40,7 +41,22 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	this.authorised = 0;
 
 	this.init = function () {
-		bot.man_list.push("/set_pin - Устанавливает пин на текущую игру.");
+		this.bot.addCommand(this.code_regex, false, true, msg => {
+			var code = msg.text.match(this.code_regex)[0].toLowerCase().replace('д', 'd').replace('р', 'r');
+			if (this.bot.allow_code && code.length > 2) {
+				this.sendCode(code, (response) => {
+					this.bot.telegram_class.reply(msg, response);
+				});
+			}
+		});
+
+		this.bot.addCommand(/^\/set_pin/, true, false, msg => {
+			assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пин.");
+			configuration.classic.pin = msg.text.match(/.*\s(.*)/)[1].trim();
+			this.setRequest();
+			this.telegram_class.reply(msg, "Новый пин:" + configuration.classic.pin);
+		}, "Устанавливает пин на текущую игру.");
+
 		this.setRequest();
 		this.login(function (msg) {
 			console.log(configuration.bot_name + " " + msg);
@@ -147,9 +163,6 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 				callback(body);
 			}
 		});
-	};
-	this.updatePin = function () {
-		this.setRequest();
 	};
 	return this;
 };

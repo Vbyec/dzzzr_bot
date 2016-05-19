@@ -1,267 +1,166 @@
 var BotClass = function (configuration_file, ProxyFactory) {
-
+	// Подгружаем необходимые require
 	var fs = require('fs'),
 		configuration = JSON.parse(fs.readFileSync(configuration_file)),
 		log4js = require('log4js'),
 		TelegramBot = require('node-telegram-bot-api'),
-		bot = new TelegramBot(configuration.token, {polling: true});
+		Command = require('./command');
+	this.telegram_class = new TelegramBot(configuration.token, {polling: true});
 	require('./functions');
 	log4js.loadAppender('file');
 	log4js.addAppender(log4js.appenders.file(configuration.log_path + "/" + configuration.bot_name + ".log"), configuration.bot_name);
 	var logger = new log4js.getLogger(configuration.bot_name);
+	this.logger = logger;
 	ProxyFactory.setLogger(logger);
 	// catch all exceptions
 	process.on('uncaughtException', function (err) {
 		logger.fatal('Caught exception: ' + err + '\n' + err.stack);
 	});
 
-	bot.admin_user = configuration.admin_user;
-	bot.name = configuration.bot_name;
-	bot.allow_code = 1;
-	bot.excluded_command = ['register_chat', 'man'];
-	bot.man_list = [
-		"/register_chat - Регистрирует текущий чат как разрешенный",
-		"/admin_user_add - Добавляет указанного пользователя в админы боты",
-		"/admin_user_remove - Удаляет указанного пользователя из админов бота",
-		"/admin_user_list -  Показывает список админов бота.",
-		"/allow_code -  Разрешает вбивать коды.",
-		"/forbid_code -  Запрещает вбивать коды.",
-		"/add_excluded -  Добавляет команду в запрещенные.",
-		"/remove_excluded -  Убирает команду из запрещенных."];
-
-	bot.help_list = [
-		"/list - Выводит список оставшихся кодов.",
-		"/help - Выводит эту информацию "];
-	bot.registered_chat_ids = configuration.registered_chat_ids;
-	bot.reply = function (msg, text) {
-		bot.sendMessage(msg.chat.id, text, {reply_to_message_id: msg.message_id});
+	// Расширяем функционал телеграмм класса
+	this.telegram_class.reply = (msg, text)=> {
+		this.telegram_class.sendMessage(msg.chat.id, text, {reply_to_message_id: msg.message_id});
 	};
-	bot.answer = function (msg, text, option) {
-		bot.sendMessage(msg.chat.id, text, option);
+	this.telegram_class.answer = (msg, text, option) => {
+		this.telegram_class.sendMessage(msg.chat.id, text, option);
 	};
-	bot.send_location = function (msg, latitude, longitude, title) {
-		console.log(title);
+	this.telegram_class.send_location = (msg, latitude, longitude, title) => {
 		if (title && typeof  title == "string") {
-			bot.sendMessage(msg.chat.id, title).then(function () {
-				bot.sendLocation(msg.chat.id, latitude, longitude);
+			this.telegram_class.sendMessage(msg.chat.id, title).then(()=> {
+				this.telegram_class.sendLocation(msg.chat.id, latitude, longitude);
 			});
 		} else {
-			bot.sendLocation(msg.chat.id, latitude, longitude);
+			this.telegram_class.sendLocation(msg.chat.id, latitude, longitude);
 		}
-	};
-	/**
-	 *
-	 * @returns {boolean}
-	 */
-	bot.IsUserAdmin = function (username) {
-		return this.admin_user.indexOf(username) > -1;
 	};
 
-	bot.removeAdmin = function (user) {
-		if ((index = this.admin_user.indexOf(user)) > -1) {
-			this.admin_user.splice(index, 1);
-		}
+	// Добавляем методы в класс бота
+	this.addCommand = function (regexp, need_admin, need_registered, callback, description = "") {
+		this.commands.push(new Command(regexp, need_admin, need_registered, callback, this, description));
 	};
-	bot.addAdmin = function (user) {
+
+	this.removeAdmin = function (user) {
+		this.admin_user.indexOf(user) > -1 && this.admin_user.splice(this.admin_user.indexOf(user), 1);
+	};
+	this.addAdmin = function (user) {
 		this.admin_user.push(user);
 		this.admin_user = this.admin_user.unique();
 	};
 
-	bot.addRegisteredChat = function (chat_id) {
+	this.addRegisteredChat = function (chat_id) {
 		this.registered_chat_ids.push(chat_id);
 		this.registered_chat_ids = this.registered_chat_ids.unique();
 	};
-	bot.onText(/^\/register_chat/, function (msg) {
-		try {
-			logger.info("/register_chat command handled. chat_id=" + msg.chat.id);
-			assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-			bot.addRegisteredChat(msg.chat.id);
-			bot.reply(msg, "Чат зарегистрирован.");
-		} catch (e) {
-			logger.fatal(e.stack);
-			bot.reply(msg, e.message);
-		}
-	});
 
-	bot.onText(/^\/man/, function (msg) {
-		try {
-			logger.info("/man command handled.");
-			assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-			bot.answer(msg, bot.man_list.join("\n"));
-		} catch (e) {
-			logger.fatal(e.stack);
-			bot.reply(msg, e.message);
-		}
-	});
+	// Задаем стартовые значения переменным бота
+	this.admin_user = configuration.admin_user;
+	this.commands = [];
+	this.name = configuration.bot_name;
+	this.allow_code = 0;
+	this.registered_chat_ids = configuration.registered_chat_ids;
+
 	fs.accessSync('./engines/' + configuration.engine + ".js", fs.F_OK);
-	var currentEngine = require('./engines/' + configuration.engine + ".js")(configuration, bot, ProxyFactory);
-	/** Все равно пока не работает
-	 bot.onText(/^!(.*)/, function (msg, match) {
-		assertNotEmpty(bot.registered_chat_ids.indexOf(msg.chat.id) > -1, "Не зарегистрированный чат.");
-		var command = match[1];
-		if (bot.allow_code) {
-			if (command.length > 2) {
-				currentEngine.sendCode(command, function (response) {
-					bot.reply(msg, response);
-				});
-			}
-		}
-	});
-	 **/
-	bot.onText(currentEngine.code_regex, function (msg, match) {
-		logger.info("code matched " + msg.text);
+	this.currentEngine = require('./engines/' + configuration.engine + ".js")(configuration, this, ProxyFactory);
+
+	// Обрабатываем все зарегистрированные команды
+	this.telegram_class.on('message', (msg)=> {
 		try {
-			assertNotEmpty(bot.registered_chat_ids.indexOf(msg.chat.id) > -1, "Не зарегистрированный чат.");
-			var command = match[0].toLowerCase().replace('д', 'd').replace('р', 'r');
-			if (bot.allow_code && command.length > 2) {
-				currentEngine.sendCode(command, function (response) {
-					bot.reply(msg, response);
-				});
-			}
+			var command = this.commands.find(command=>msg.text && command.regexp.exec(msg.text.trim().toLowerCase().replace('@' + this.name, '')));
+			if (command === undefined) return true;
+			command.registerInLog()
+				.checkAdmin(msg.from.username)
+				.checkRegisteredChat(msg.chat.id)
+				.callback(msg);
 		}
 		catch (e) {
 			logger.fatal(e.stack);
-			bot.reply(msg, e.message);
+			this.telegram_class.reply(msg, e.message);
 		}
 	});
-	bot.onText(currentEngine.location_regex, function (msg, match) {
-		logger.info("location matched " + msg.text);
-		try {
-			assertNotEmpty(bot.registered_chat_ids.indexOf(msg.chat.id) > -1, "Не зарегистрированный чат.");
-			msg.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach(function (element, index) {
-				var location = element.match(/\d{2}[.,]\d{2,8}/ig);
-				var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
-				title = title != null ? title[0] : "";
-				setTimeout(function () {
-					bot.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
-				}, index * 3000);
+
+	// Добавляем все необходимые команды
+	// Админские команды, работают даже в незарегистрированных чатах.
+	this.addCommand(/^\/man$/, true, false, msg =>
+		this.telegram_class.answer(msg, this.commands
+				.filter(el=>el.need_admin && el.description)
+				.map(el=>el.regexp.toString().match(/\\(\/.*)\//)[1].replace('$', '') + " - " + el.description)
+				.join("\n")
+		));
+	this.addCommand(/^\/register_chat$/, true, false, msg => {
+		this.addRegisteredChat(msg.chat.id);
+		this.telegram_class.reply(msg, "Чат зарегистрирован.");
+	}, "Регистрирует текущий чат как разрешенный.");
+	this.addCommand(/^\/admin_user_list$/, true, false, msg => this.telegram_class.answer(msg, this.admin_user.map(el=>"@" + el).join("\n")), "Показывает список админов бота.");
+
+	this.addCommand(/^\/admin_user_add/, true, false, msg => {
+		assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пользователь.");
+		let new_user = msg.text.match(/.*\s(.*)/)[1].replace("@", "").trim();
+		this.addAdmin(new_user);
+		this.telegram_class.reply(msg, "@" + new_user + " добавлен в список админов.");
+	}, "Добавляет указанного пользователя в админы боты.");
+
+	this.addCommand(/^\/admin_user_remove/, true, false, msg => {
+		assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пользователь");
+		let new_user = msg.text.match(/.*\s(.*)/)[1].replace("@", "").trim();
+		this.removeAdmin(new_user);
+		this.telegram_class.reply(msg, "@" + new_user + " удален из список админов");
+	}, "Удаляет указанного пользователя из админов бота.");
+
+	this.addCommand(/^\/allow_code$/, true, false, msg => {
+		this.allow_code = 1;
+		logger.info("allow_code new value=" + this.allow_code);
+		this.telegram_class.answer(msg, "Теперь коды <strong>РАЗРЕШЕНО</strong> вбивать", {parse_mode: 'HTML'});
+	}, "Разрешает вбивать коды.");
+
+	this.addCommand(/^\/forbid_code$/, true, false, msg => {
+		this.allow_code = 0;
+		logger.info("allow_code new value=" + this.allow_code);
+		this.telegram_class.answer(msg, "Теперь коды <strong>ЗАПРЕЩЕНО</strong> вбивать", {parse_mode: 'HTML'});
+	}, "Запрещает вбивать коды.");
+
+	// Пользовательские команды, работают только в зарегистрированных чатах
+	this.addCommand(/^\/help$/, false, true, msg =>
+			this.telegram_class.answer(msg, this.commands
+				.filter(el=>!el.need_admin && el.description)
+				.map(el=>el.regexp.toString().match(/\\(\/.*)\//)[1].replace('$', '') + " - " + el.description)
+				.join("\n"))
+		, "Выводит эту информацию.");
+
+	this.addCommand(this.location_regex, false, true, msg => {
+		msg.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+			var location = element.match(/\d{2}[.,]\d{2,8}/ig);
+			var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+			title = title != null ? title[0] : "";
+			setTimeout(() => {
+				this.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
+			}, index * 3000);
+		});
+	});
+
+	this.addCommand(/^\/list$/, false, true, msg => {
+			this.currentEngine.getPage((page) => {
+				if (match = page.match(/начнется (.+).<br>Ждем вас к началу игры/)) {
+					this.telegram_class.answer(msg, 'Игра еще не началась. Старт ' + match[1]);
+				} else {
+					var list = this.currentEngine.getCodeList(page);
+					if (list.length) {
+						this.telegram_class.answer(msg, list.map(function (sector) {
+							return sector.name + ":\n" + sector.list.map(function (code) {
+									return code.done ? null : code.index + ") " + code.difficult;
+								}).filter(function (n) {
+									return n != undefined
+								}).join("\n");
+						}).join("\n"));
+					} else {
+						this.telegram_class.answer(msg, 'В данном задании не указаны КС');
+					}
+				}
 			});
 		}
-		catch (e) {
-			logger.fatal(e.stack);
-			bot.reply(msg, e.message);
-		}
-	});
+		, "Выводит список оставшихся кодов.");
 
-	bot.onText(/^\/([^\s]+)\s?(.+)?/, function (msg, match) {
-		var from_id = msg.chat.id;
-		var command = match[1].toLowerCase().replace('@' + bot.name, '');
-		var arg = match[2];
-		logger.info("Request for /" + command + " command");
-		try {
-			if (bot.excluded_command.indexOf(command) == -1) {
-				assertNotEmpty(bot.registered_chat_ids.indexOf(from_id) > -1, "Не зарегистрированный чат.");
-				switch (command) {
-					case "help":
-						logger.info("/" + command + " command handled.");
-						bot.answer(msg, bot.help_list.join("\n"));
-						break;
-					case 'list':
-						currentEngine.getPage(function (page) {
-							if (match = page.match(/начнется (.+).<br>Ждем вас к началу игры/)) {
-								bot.answer(msg, 'Игра еще не началась. Старт ' + match[1]);
-							} else {
-								var list = currentEngine.getCodeList(page);
-								if (list.length) {
-									bot.answer(msg, list.map(function (sector) {
-										return sector.name + ":\n" + sector.list.map(function (code) {
-												return code.done ? null : code.index + ") " + code.difficult;
-											}).filter(function (n) {
-												return n != undefined
-											}).join("\n");
-									}).join("\n"));
-								} else {
-									bot.answer(msg, 'В данном задании не указаны КС');
-								}
-							}
-						});
-						break;
-					case 'allow_code':
-						logger.info("/" + command + " command handled.");
-						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-						bot.allow_code = 1;
-						logger.info("allow_code new value=" + bot.allow_code);
-						bot.answer(msg, "Теперь коды <strong>РАЗРЕШЕНО</strong> вбивать", {parse_mode: 'HTML'});
-						break;
-					case 'forbid_code':
-						logger.info("/" + command + " command handled.");
-						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-						bot.allow_code = 0;
-						logger.info("allow_code new value=" + bot.allow_code);
-						bot.answer(msg, "Теперь коды <strong>ЗАПРЕЩЕНО</strong> вбивать", {parse_mode: 'HTML'});
-						break;
-					case 'admin_user_add':
-						logger.info("/" + command + " command handled.");
-						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-						assertNotEmpty(arg, "Не указан пользователь для добавления");
-						arg = arg.replace("@", "");
-						bot.addAdmin(arg);
-						bot.reply(msg, "@" + arg + " добавлен в список админов");
-						break;
-					case 'admin_user_remove':
-						logger.info("/" + command + " command handled.");
-						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-						assertNotEmpty(arg, "Не указан пользователь для удаления");
-						arg = arg.replace("@", "");
-						bot.removeAdmin(arg);
-						bot.reply(msg, "@" + arg + " удален из списока админов");
-						break;
-					case 'admin_user_list':
-						logger.info("/" + command + " command handled.");
-						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-						var text = "";
-						bot.admin_user.forEach(function (element) {
-							text += "@" + element + "\n";
-						});
-						bot.reply(msg, text);
-						break;
-					case 'set_pin':
-						logger.info("/" + command + " command handled.");
-						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-						assertNotEmpty(arg.trim(), "Не указан пин");
-						configuration[currentEngine.name].pin = arg.trim();
-						if (currentEngine.hasOwnProperty("updatePin")) {
-							currentEngine.updatePin();
-						}
-						bot.reply(msg, "Новый пин:" + configuration[currentEngine.name].pin);
-						break;
-					case 'get_light_url':
-						logger.info("/" + command + " command handled.");
-						bot.reply(msg, "URL на текущую игру http://lite.dzzzr.ru/moscow/go/?pin=" + configuration.light.pin);
-						break;
-					case 'add_excluded':
-						logger.info("/" + command + " command handled.");
-						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-						bot.excluded_command.push(arg.trim());
-						bot.reply(msg, 'Команда ' + arg.trim() + ' теперь запрещена');
-						break;
-					case 'remove_excluded':
-						logger.info("/" + command + " command handled.");
-						assertNotEmpty(bot.IsUserAdmin(msg.from.username), "Недостаточно прав");
-						var index = bot.excluded_command.indexOf(arg.trim());
-						assertNotEmpty(index > -1, "Команда не запрещена");
-						bot.excluded_command.splice(index, 1);
-						bot.reply(msg, 'Команда ' + arg.trim() + ' теперь разрешена');
-						break;
-					default :
-						logger.warn("/" + command + " - unknown command");
-						bot.reply(msg, "Unknown command");
-						break;
-				}
-			}
-		} catch (e) {
-			logger.fatal(e.stack);
-			bot.reply(msg, e.message);
-		}
-	});
-
-	if (bot.registered_chat_ids[0]) {
-		bot.registered_chat_ids.forEach(function (chat_id) {
-			bot.sendMessage(chat_id, "Bot started");
-		})
-
-	}
-	currentEngine.init();
+	this.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, "Bot started"));
+	this.currentEngine.init();
 	logger.info("Bot started.");
 	return this;
 };

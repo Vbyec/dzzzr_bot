@@ -10,8 +10,20 @@ var LightEngine = function (configuration, bot) {
 	this.name = 'light';
 
 	this.init = function () {
-		bot.man_list.push("/set_pin - Устанавливает пин на текущую игру.");
-		bot.help_list.push("/get_light_url -  Выводит пин на текущую игру.");
+		this.bot.addCommand(this.code_regex, false, true, msg => {
+			var code = msg.text.match(this.code_regex)[0].toLowerCase().replace('д', 'd').replace('р', 'r');
+			if (this.bot.allow_code && code.length > 2) {
+				this.sendCode(code, (response) => {
+					this.bot.telegram_class.reply(msg, response);
+				});
+			}
+		});
+
+		this.bot.addCommand(/^\/set_pin/, true, false, msg => {
+			assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пин.");
+			configuration.light.pin = msg.text.match(/.*\s(.*)/)[1].trim();
+			this.telegram_class.reply(msg, "Новый пин:" + configuration.light.pin);
+		}, "Устанавливает пин на текущую игру.");
 	};
 	this.sendCode = function (code, callback) {
 		var old_this = this;
