@@ -6,7 +6,7 @@ ProxyFactory.init().then(function () {
 	fs.readdir('team_config/', function (error, files) {
 		files.forEach(function (file) {
 			if (file.match(/.*.json$/)) {
-				BotClass('team_config/' + file, ProxyFactory);
+				new BotClass('team_config/' + file, ProxyFactory);
 			}
 		});
 	});

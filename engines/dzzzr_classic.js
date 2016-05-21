@@ -35,7 +35,6 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 		17: "Время на отправку кода вышло"
 	};
 	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^!\..*)/i;
-	this.location_regex = /\d{2}\.\d{4,8}.{1,3}\d{2}\.\d{4,8}/i;
 	this.name = 'classic';
 	this.level = 0;
 	this.authorised = 0;
@@ -54,8 +53,12 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 			assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пин.");
 			configuration.classic.pin = msg.text.match(/.*\s(.*)/)[1].trim();
 			this.setRequest();
-			this.telegram_class.reply(msg, "Новый пин:" + configuration.classic.pin);
+			this.bot.telegram_class.reply(msg, "Новый пин:" + configuration.classic.pin);
 		}, "Устанавливает пин на текущую игру.");
+
+		this.bot.addCommand(/^\/get_url/, false, true, msg => {
+			this.bot.telegram_class.answer(msg, "http://" + configuration.classic.http_login + ":" + configuration.classic.pin + "@classic.dzzzr.ru/moscow/go/");
+		}, "Выдает URL на текущую игру.");
 
 		this.setRequest();
 		this.login(function (msg) {
