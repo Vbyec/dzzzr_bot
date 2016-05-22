@@ -54,14 +54,16 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 								let task = this.getTask(page);
 								this.bot.telegram_class.answer(msg, task.text);
 								task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, request(img)));
-								task.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
-									var location = element.match(/\d{2}[.,]\d{2,8}/ig);
-									var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
-									title = title != null ? title[0] : "";
-									setTimeout(() => {
-										this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
-									}, index * 3000);
-								});
+								setTimeout(() => {
+									task.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+										var location = element.match(/\d{2}[.,]\d{2,8}/ig);
+										var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+										title = title != null ? title[0] : "";
+										setTimeout(() => {
+											this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
+										}, index * 3000);
+									})
+								}, 2000);
 							})
 							.catch(message=> this.bot.telegram_class.answer(msg, message));
 						this.watcher = setInterval(()=> {
@@ -72,14 +74,16 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 										clearInterval(this.watcher);
 										this.bot.telegram_class.answer(msg, spoiler.text);
 										spoiler.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, request(img)));
-										spoiler.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
-											var location = element.match(/\d{2}[.,]\d{2,8}/ig);
-											var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
-											title = title != null ? title[0] : "";
-											setTimeout(() => {
-												this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
-											}, index * 3000);
-										});
+										setTimeout(() => {
+											spoiler.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+												var location = element.match(/\d{2}[.,]\d{2,8}/ig);
+												var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+												title = title != null ? title[0] : "";
+												setTimeout(() => {
+													this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
+												}, index * 3000);
+											})
+										}, 2000);
 									}
 								})
 						}, 3000);
@@ -105,16 +109,16 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 					let task = this.getTask(page);
 					this.bot.telegram_class.answer(msg, task.text);
 					task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, request(img)));
-					task.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
-						var location = element.match(/\d{2}[.,]\d{2,8}/ig);
-						var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
-						title = title != null ? title[0] : "";
-						setTimeout(() => {
-							this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
-						}, index * 3000);
-					});
-
-
+					setTimeout(() => {
+						task.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+							var location = element.match(/\d{2}[.,]\d{2,8}/ig);
+							var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+							title = title != null ? title[0] : "";
+							setTimeout(() => {
+								this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
+							}, index * 3000);
+						})
+					}, 2000);
 				})
 				.catch(message=> this.bot.telegram_class.answer(msg, message));
 		}, "Выдает текст текущего задания.");
@@ -209,12 +213,14 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	this.getTask = function (page) {
 		let task = page.slice(page.indexOf('<div class=zad>'), page.indexOf('Спойлер') > -1 ? page.indexOf('Спойлер') : page.indexOf('Коды сложности')),
 			images = task.match(/<img src="[^"]*"/g) ? task.match(/<img src="[^"]*"/g).map(img=>img.match(/"[^"]*"/)[0].replace(/"/g, '').replace(/..\/..\//, 'http://classic.dzzzr.ru/')) : [];
-		return {text: entities.decode(task.replace('</p>', '\n').replace(/(<[^>]*>)/g, '')), images: images};
+		console.log(task)
+		return {text: entities.decode(task.replace('</p>', '\n').replace('<br />', '\n').replace(/(<[^>]*>)/g, '')), images: images};
 	};
 	this.getSpoiler = function (page) {
 		let spoiler_text = page.slice(page.indexOf('Спойлер'), page.indexOf('Коды сложности')),
 			images = spoiler_text.match(/<img src="[^"]*"/g) ? spoiler_text.match(/<img src="[^"]*"/g).map(img=>img.match(/"[^"]*"/)[0].replace(/"/g, '').replace(/..\/..\//, 'http://classic.dzzzr.ru/')) : [];
-		return {text: entities.decode(spoiler_text.replace('</p>', '\n').replace(/(<[^>]*>)/g, '')), images: images};
+
+		return {text: entities.decode(spoiler_text.replace('</p>', '\n').replace('<br />', '\n').replace(/(<[^>]*>)/g, '')), images: images};
 	};
 	this.getPage = function () {
 		return new Promise((resolve, reject) => {
