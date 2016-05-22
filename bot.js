@@ -139,27 +139,23 @@ var BotClass = function (configuration_file, ProxyFactory) {
 	});
 
 	this.addCommand(/^\/list$/, false, true, msg => {
-			this.currentEngine.getPage((page) => {
-				if (match = page.match(/начнется (.+).<br>Ждем вас к началу игры/)) {
-					this.telegram_class.answer(msg, 'Игра еще не началась. Старт ' + match[1]);
+		this.currentEngine.getPage().then(
+				page => {
+				var list = this.currentEngine.getCodeList(page);
+				if (list.length) {
+					this.telegram_class.answer(msg, list.map(function (sector) {
+						return sector.name + ":\n" + sector.list.map(function (code) {
+								return code.done ? null : code.index + ") " + code.difficult;
+							}).filter(function (n) {
+								return n != undefined
+							}).join("\n");
+					}).join("\n"));
 				} else {
-					var list = this.currentEngine.getCodeList(page);
-					if (list.length) {
-						this.telegram_class.answer(msg, list.map(function (sector) {
-							return sector.name + ":\n" + sector.list.map(function (code) {
-									return code.done ? null : code.index + ") " + code.difficult;
-								}).filter(function (n) {
-									return n != undefined
-								}).join("\n");
-						}).join("\n"));
-					} else {
-						this.telegram_class.answer(msg, 'В данном задании не указаны КС');
-					}
+					this.telegram_class.answer(msg, 'В данном задании не указаны КС');
 				}
-			});
-		}
-		, "Выводит список оставшихся кодов.");
-
+			}
+		).catch(message=> this.telegram_class.answer(msg, message));
+	}, "Выводит список оставшихся кодов.");
 	this.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, "Bot started"));
 	this.currentEngine.init();
 	logger.info("Bot started.");

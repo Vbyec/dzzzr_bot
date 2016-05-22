@@ -1,10 +1,13 @@
 var iconv = require('iconv-lite'),
+	Entities = require('html-entities').AllHtmlEntities,
 	cheerio = require('cheerio');
 iconv.skipDecodeWarning = true;
+entities = new Entities();
 
 var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	this.request = {};
 	this.bot = bot;
+	this.watcher = {};
 	this.setRequest = function () {
 		this.request = require('request').defaults({
 			jar: true,
@@ -44,7 +47,43 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 			var code = msg.text.match(this.code_regex)[0].toLowerCase().replace('д', 'd').replace('р', 'r');
 			if (this.bot.allow_code && code.length > 2) {
 				this.sendCode(code, (response) => {
-					this.bot.telegram_class.reply(msg, response);
+					this.bot.telegram_class.reply(msg, response.text);
+					if (response.done) {
+						this.getPage()
+							.then(page=> {
+								let task = this.getTask(page);
+								this.bot.telegram_class.answer(msg, task.text);
+								task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, request(img)));
+								task.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+									var location = element.match(/\d{2}[.,]\d{2,8}/ig);
+									var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+									title = title != null ? title[0] : "";
+									setTimeout(() => {
+										this.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
+									}, index * 3000);
+								});
+							})
+							.catch(message=> this.bot.telegram_class.answer(msg, message));
+						this.watcher = setInterval(()=> {
+							this.getPage()
+								.then(page=> {
+									let spoiler = this.getSpoiler(page);
+									if (spoiler.text) {
+										clearInterval(this.watcher);
+										this.bot.telegram_class.answer(msg, spoiler.text);
+										spoiler.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, request(img)));
+										spoiler.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+											var location = element.match(/\d{2}[.,]\d{2,8}/ig);
+											var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+											title = title != null ? title[0] : "";
+											setTimeout(() => {
+												this.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
+											}, index * 3000);
+										});
+									}
+								})
+						}, 3000);
+					}
 				});
 			}
 		});
@@ -59,6 +98,16 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 		this.bot.addCommand(/^\/get_url/, false, true, msg => {
 			this.bot.telegram_class.answer(msg, "http://" + configuration.classic.http_login + ":" + configuration.classic.pin + "@classic.dzzzr.ru/moscow/go/");
 		}, "Выдает URL на текущую игру.");
+
+		this.bot.addCommand(/^\/get_task/, false, true, msg => {
+			this.getPage()
+				.then(page=> {
+					let task = this.getTask(page);
+					this.bot.telegram_class.answer(msg, task.text);
+					task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, request(img)));
+				})
+				.catch(message=> this.bot.telegram_class.answer(msg, message));
+		}, "Выдает текст текущего задания.");
 
 		this.setRequest();
 		this.login(function (msg) {
@@ -82,10 +131,6 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 					body = iconv.decode(body, 'win1251');
 					self.authorised = !!body.match("Здравствуйте, " + configuration.classic.login);
 					callback(self.authorised);
-				} else {
-					//request.defaults({proxy:"http://"+ProxyFactory.get()});
-					//self.login(callback);
-					//console.log('error');
 				}
 			}
 		);
@@ -104,12 +149,9 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 				var response_code = response.request.uri.search.match(/&err=(\d{1,2})/)[1];
 				if (!error && response.statusCode == 200) {
 					body = iconv.decode(body, 'win1251');
-					self.getLevel(body);
-					if (self.response_codes[response_code]) {
-						callback(self.response_codes[response_code]);
-					} else {
-						callback(self.getAnswer(body));
-					}
+					let answer = self.response_codes[response_code] ? self.response_codes[response_code] : self.getAnswer(body);
+					let done = response_code == 5 || response_code == 9;
+					callback({text: answer, done: done});
 				}
 			}
 		);
@@ -120,7 +162,7 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	};
 	this.getLevel = function (page) {
 		$ = cheerio.load(page);
-		this.level = $('.title').text().match(/Задание.(\d{1,2})/)[1];
+		return $('.title').text().match(/Задание.(\d{1,2})/)[1];
 	};
 	this.getTime = function (page) {
 		var time = page.match(/window.setTimeout\(.countDown.(\d{1,5})/)[1];
@@ -154,17 +196,29 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 		}
 		return result;
 	};
-	this.getPage = function (callback) {
-		var self = this;
-		this.request.get({
-			url: "http://classic.dzzzr.ru/moscow/go",
-			encoding: 'binary'
-		}, function (error, response, body) {
-			if (!error && response.statusCode == 200) {
-				body = iconv.decode(body, 'win1251');
-				//self.getLevel(body);
-				callback(body);
-			}
+	this.getTask = function (page) {
+		let task = page.slice(page.indexOf('<div class=zad>'), page.indexOf('Спойлер') > -1 ? page.indexOf('Спойлер') : page.indexOf('Коды сложности')),
+			images = task.match(/<img src="[^"]*"/g) ? task.match(/<img src="[^"]*"/g).map(img=>img.match(/"[^"]*"/)[0].replace(/"/g, '').replace(/..\/..\//, 'http://classic.dzzzr.ru/')) : [];
+		return {text: entities.decode(task.replace('</p>', '\n').replace(/(<[^>]*>)/g, '')), images: images};
+	};
+	this.getSpoiler = function (page) {
+		let spoiler_text = page.slice(page.indexOf('Спойлер'), page.indexOf('Коды сложности')),
+			images = spoiler_text.match(/<img src="[^"]*"/g) ? spoiler_text.match(/<img src="[^"]*"/g).map(img=>img.match(/"[^"]*"/)[0].replace(/"/g, '').replace(/..\/..\//, 'http://classic.dzzzr.ru/')) : [];
+		return {text: entities.decode(spoiler_text.replace('</p>', '\n').replace(/(<[^>]*>)/g, '')), images: images};
+	};
+	this.getPage = function () {
+		return new Promise((resolve, reject) => {
+			this.request.get({
+				url: "http://classic.dzzzr.ru/moscow/go",
+				encoding: 'binary'
+			}, function (error, response, body) {
+				if (response.statusCode == 401) reject('Ошибка авторизации');
+				if (match = body.match(/начнется (.+).<br>Ждем вас к началу игры/))reject('Игра еще не началась. Старт ' + match[1]);
+				if (!error && response.statusCode == 200) {
+					body = iconv.decode(body, 'win1251');
+					resolve(body);
+				}
+			});
 		});
 	};
 	return this;
