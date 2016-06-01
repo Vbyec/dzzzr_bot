@@ -13,12 +13,13 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 			jar: true,
 			followAllRedirects: true,
 			headers: {
-				Referer: "http://classic.dzzzr.ru/moscow/go"
+				Referer: "http://classic.dzzzr.ru/",
+				Host: "classic.dzzzr.ru"
 			}, auth: {
 				user: configuration.classic.http_login,
 				pass: configuration.classic.pin
 			}
-		})
+		});
 	};
 	this.response_codes = {
 		1: "Игра не началась",
@@ -122,32 +123,77 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 				})
 				.catch(message=> this.bot.telegram_class.answer(msg, message));
 		}, "Выдает текст текущего задания.");
-
 		this.setRequest();
-		this.login(function (msg) {
-			console.log(configuration.bot_name + " " + msg);
-		});
+		this.fuckCloudFlare()
+			.then(status=> {
+				this.bot.notifyAllAdmins("CloudFlare check " + status);
+				this.login().then(msg=>this.bot.notifyAllAdmins("Auth " + msg));
+			})
+			.catch(status=> this.bot.notifyAllAdmins("CloudFlare check " + status));
 	};
 
-	this.login = function (callback) {
-		var self = this;
-		this.request.post(
-			{
-				url: "http://classic.dzzzr.ru/moscow/",
-				encoding: 'binary',
-				form: {
-					action: "auth",
-					login: configuration.classic.login,
-					password: configuration.classic.password
+	this.fuckCloudFlare = function () {
+		return new Promise((resolve, reject)=> {
+			this.request.get(
+				{
+					url: "http://classic.dzzzr.ru/moscow/"
+				}, (error, response, body) => {
+					$ = cheerio.load(body);
+					let definition = body.match(/var t,r,a,f, (.*)/)[1];
+					let calculation = body.match(/;(.*)a.value = parseInt/)[1];
+					let variable = eval(definition + calculation);
+					let form = {
+						jschl_vc: $("[name=jschl_vc]").val(),
+						pass: $("[name=pass]").val(),
+						jschl_answer: parseInt(variable, 10) + 16
+					};
+
+					function buildUrl(url, parameters) {
+						var qs = "";
+						for (var key in parameters) {
+							var value = parameters[key];
+							qs += encodeURIComponent(key) + "=" + encodeURIComponent(value) + "&";
+						}
+						if (qs.length > 0) {
+							qs = qs.substring(0, qs.length - 1); //chop off last "&"
+							url = url + "?" + qs;
+						}
+						return url;
+					}
+
+					setTimeout(() => {
+						this.request.get(
+							{
+								url: buildUrl("http://classic.dzzzr.ru/cdn-cgi/l/chk_jschl", form)
+							}, (error, response) => {
+								response.statusCode == 200 ? resolve(response.statusMessage) : reject(response.statusMessage);
+							});
+					}, 4000);
 				}
-			}, function (error, response, body) {
-				if (!error && response.statusCode == 200) {
-					body = iconv.decode(body, 'win1251');
-					self.authorised = !!body.match("Здравствуйте, " + configuration.classic.login);
-					callback(self.authorised);
+			);
+		})
+	};
+
+	this.login = function () {
+		return new Promise((resolve)=> {
+			this.request.post(
+				{
+					url: "http://classic.dzzzr.ru/moscow/",
+					encoding: 'binary',
+					form: {
+						action: "auth",
+						login: configuration.classic.login,
+						password: configuration.classic.password
+					}
+				}, (error, response, body) => {
+					if (!error && response.statusCode == 200) {
+						body = iconv.decode(body, 'win1251');
+						this.authorised = !!body.match("Здравствуйте, " + configuration.classic.login);
+						resolve(this.authorised);
+					}
 				}
-			}
-		);
+			);
+		})
 	};
 	this.sendCode = function (code, callback) {
 		var self = this;
@@ -213,7 +259,6 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 	this.getTask = function (page) {
 		let task = page.slice(page.indexOf('<div class=zad>'), page.indexOf('Спойлер') > -1 ? page.indexOf('Спойлер') : page.indexOf('Коды сложности')),
 			images = task.match(/<img src="[^"]*"/g) ? task.match(/<img src="[^"]*"/g).map(img=>img.match(/"[^"]*"/)[0].replace(/"/g, '').replace(/..\/..\//, 'http://classic.dzzzr.ru/')) : [];
-		console.log(task)
 		return {text: entities.decode(task.replace('</p>', '\n').replace('<br />', '\n').replace(/(<[^>]*>)/g, '')), images: images};
 	};
 	this.getSpoiler = function (page) {

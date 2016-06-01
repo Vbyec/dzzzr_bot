@@ -1,4 +1,10 @@
-var request = require('request'),
+var request = require('request').defaults({
+		jar: true,
+		headers: {
+			Referer: "http://lite.dzzzr.ru/",
+			Host: "lite.dzzzr.ru"
+		}
+	}),
 	iconv = require('iconv-lite'),
 	cheerio = require('cheerio');
 
@@ -25,11 +31,56 @@ var LightEngine = function (configuration, bot) {
 			configuration.light.pin = msg.text.match(/.*\s(.*)/)[1].trim();
 			this.telegram_class.reply(msg, "Новый пин:" + configuration.light.pin);
 		}, "Устанавливает пин на текущую игру.");
+		this.bot.addCommand(/^\/get_url/, false, true, msg => {
+			this.bot.telegram_class.answer(msg, "http://lite.dzzzr.ru/moscow/go/?pin=" + configuration.light.pin);
+		}, "Выдает URL на текущую игру.");
+
+		this.fuckCloudFlare()
+			.then(status=>this.bot.notifyAllAdmins("CloudFlare check " + status))
+			.catch(status=> this.bot.notifyAllAdmins("CloudFlare check " + status));
 	};
 
-	this.bot.addCommand(/^\/get_url/, false, true, msg => {
-		this.bot.telegram_class.answer(msg, "http://lite.dzzzr.ru/moscow/go/?pin=" + configuration.light.pin);
-	}, "Выдает URL на текущую игру.");
+	this.fuckCloudFlare = function () {
+		return new Promise((resolve, reject)=> {
+			request.get(
+				{
+					url: "http://lite.dzzzr.ru/moscow/"
+				}, (error, response, body) => {
+					$ = cheerio.load(body);
+					let definition = body.match(/var t,r,a,f, (.*)/)[1];
+					let calculation = body.match(/;(.*)a.value = parseInt/)[1];
+					let variable = eval(definition + calculation);
+					let form = {
+						jschl_vc: $("[name=jschl_vc]").val(),
+						pass: $("[name=pass]").val(),
+						jschl_answer: parseInt(variable, 10) + 13
+					};
+
+					function buildUrl(url, parameters) {
+						var qs = "";
+						for (var key in parameters) {
+							var value = parameters[key];
+							qs += encodeURIComponent(key) + "=" + encodeURIComponent(value) + "&";
+						}
+						if (qs.length > 0) {
+							qs = qs.substring(0, qs.length - 1); //chop off last "&"
+							url = url + "?" + qs;
+						}
+						return url;
+					}
+
+					setTimeout(() => {
+						request.get(
+							{
+								url: buildUrl("http://lite.dzzzr.ru/cdn-cgi/l/chk_jschl", form)
+							}, (error, response, body) => {
+								response.statusCode == 200 ? resolve(response.statusMessage) : reject(response.statusMessage);
+							});
+					}, 4000);
+				}
+			);
+		})
+	};
 
 	this.sendCode = function (code, callback) {
 		var old_this = this;

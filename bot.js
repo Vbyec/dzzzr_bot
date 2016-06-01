@@ -52,6 +52,8 @@ var BotClass = function (configuration_file, ProxyFactory) {
 		this.registered_chat_ids = this.registered_chat_ids.unique();
 	};
 
+	this.notifyAllAdmins = msg=>this.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, msg));
+
 	// Задаем стартовые значения переменным бота
 	this.admin_user = configuration.admin_user;
 	this.commands = [];
@@ -156,7 +158,7 @@ var BotClass = function (configuration_file, ProxyFactory) {
 			}
 		).catch(message=> this.telegram_class.answer(msg, message));
 	}, "Выводит список оставшихся кодов.");
-	this.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, "Bot started"));
+	this.notifyAllAdmins("Bot started");
 	this.currentEngine.init();
 	logger.info("Bot started.");
 	return this;
