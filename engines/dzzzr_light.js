@@ -8,6 +8,7 @@ var LightEngine = function (configuration, bot) {
 	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^!\..*)/i;
 	this.location_regex = /\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/i;
 	this.name = 'light';
+	this.bot = bot;
 
 	this.init = function () {
 		this.bot.addCommand(this.code_regex, false, true, msg => {
@@ -25,6 +26,11 @@ var LightEngine = function (configuration, bot) {
 			this.telegram_class.reply(msg, "Новый пин:" + configuration.light.pin);
 		}, "Устанавливает пин на текущую игру.");
 	};
+
+	this.bot.addCommand(/^\/get_url/, false, true, msg => {
+		this.bot.telegram_class.answer(msg, "http://lite.dzzzr.ru/moscow/go/?pin=" + configuration.light.pin);
+	}, "Выдает URL на текущую игру.");
+
 	this.sendCode = function (code, callback) {
 		var old_this = this;
 		request.post(
@@ -86,18 +92,20 @@ var LightEngine = function (configuration, bot) {
 		}
 		return result;
 	};
-	this.getPage = function (callback) {
-		request({
-			uri: "http://lite.dzzzr.ru/moscow/go/?pin=" + configuration.light.pin,
-			method: 'GET',
-			encoding: 'binary'
-		}, function (error, response, body) {
-			if (!error && response.statusCode == 200) {
-				//returning value
-				//@todo use this
-				body = iconv.decode(body, 'win1251');
-				callback(body);
-			}
+	this.getPage = function () {
+		return new Promise((resolve, reject) => {
+			request({
+				uri: "http://lite.dzzzr.ru/moscow/go/?pin=" + configuration.light.pin,
+				method: 'GET',
+				encoding: 'binary'
+			}, function (error, response, body) {
+				if (!error && response.statusCode == 200) {
+					//@todo Добавить проверку на отсутствие авторизации
+					//if (response.statusCode == 401) reject('Ошибка авторизации');
+					body = iconv.decode(body, 'win1251');
+					resolve(body);
+				}
+			});
 		});
 	};
 	return this;
