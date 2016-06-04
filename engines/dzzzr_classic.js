@@ -138,6 +138,10 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 				{
 					url: "http://classic.dzzzr.ru/moscow/"
 				}, (error, response, body) => {
+						if(response.statusCode==200){
+							resolve(' no CloudFlare');
+							return true;
+						}
 					$ = cheerio.load(body);
 					let definition = body.match(/var t,r,a,f, (.*)/)[1];
 					let calculation = body.match(/;(.*)a.value = parseInt/)[1];
