@@ -278,9 +278,9 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 				encoding: 'binary'
 			}, function (error, response, body) {
 				if (response.statusCode == 401) reject('Ошибка авторизации');
+				body = iconv.decode(body, 'win1251');
 				if (match = body.match(/начнется (.+).<br>Ждем вас к началу игры/))reject('Игра еще не началась. Старт ' + match[1]);
 				if (!error && response.statusCode == 200) {
-					body = iconv.decode(body, 'win1251');
 					resolve(body);
 				}
 			});
