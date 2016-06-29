@@ -4,7 +4,7 @@ var iconv = require('iconv-lite'),
 iconv.skipDecodeWarning = true;
 entities = new Entities();
 
-var ClassicEngine = function (configuration, bot, ProxyFactory) {
+var ClassicEngine = function (configuration, bot) {
 	this.request = {};
 	this.bot = bot;
 	this.watcher = {};
@@ -138,10 +138,10 @@ var ClassicEngine = function (configuration, bot, ProxyFactory) {
 				{
 					url: "http://classic.dzzzr.ru/moscow/"
 				}, (error, response, body) => {
-						if(response.statusCode==200){
-							resolve(' no CloudFlare');
-							return true;
-						}
+					if (response.statusCode == 200) {
+						resolve(' no CloudFlare');
+						return true;
+					}
 					$ = cheerio.load(body);
 					let definition = body.match(/var t,r,a,f, (.*)/)[1];
 					let calculation = body.match(/;(.*)a.value = parseInt/)[1];

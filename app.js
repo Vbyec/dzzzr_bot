@@ -1,14 +1,3 @@
-var BotClass = require('./bot'),
-	ProxyFactory = require('./proxy_factory')(),
-	fs = require('fs');
+var BotClass = require('./bot');
 
-ProxyFactory.init().then(function () {
-	fs.readdir('team_config/', function (error, files) {
-		files.forEach(function (file) {
-			if (file.match(/.*.json$/)) {
-				new BotClass('team_config/' + file, ProxyFactory);
-			}
-		});
-	});
-});
-
+require('fs').readdir('team_config/', (error, files) => files.forEach(file => file.match(/.*.json$/) && new BotClass('team_config/' + file)));

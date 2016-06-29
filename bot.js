@@ -1,4 +1,4 @@
-var BotClass = function (configuration_file, ProxyFactory) {
+var BotClass = function (configuration_file) {
 	// Подгружаем необходимые require
 	var fs = require('fs'),
 		configuration = JSON.parse(fs.readFileSync(configuration_file)),
@@ -11,7 +11,6 @@ var BotClass = function (configuration_file, ProxyFactory) {
 	log4js.addAppender(log4js.appenders.file(configuration.log_path + "/" + configuration.bot_name + ".log"), configuration.bot_name);
 	var logger = new log4js.getLogger(configuration.bot_name);
 	this.logger = logger;
-	ProxyFactory.setLogger(logger);
 	// catch all exceptions
 	process.on('uncaughtException', function (err) {
 		logger.fatal('Caught exception: ' + err + '\n' + err.stack);
@@ -63,8 +62,8 @@ var BotClass = function (configuration_file, ProxyFactory) {
 	this.location_regex = /\d{2}\.\d{4,8}.{1,3}\d{2}\.\d{4,8}/i;
 
 	fs.accessSync('./engines/' + configuration.engine + ".js", fs.F_OK);
-	this.currentEngine = require('./engines/' + configuration.engine + ".js")(configuration, this, ProxyFactory);
-
+	let currentEngineClass = require('./engines/' + configuration.engine + ".js");
+	this.currentEngine = new currentEngineClass(configuration, this);
 	// Обрабатываем все зарегистрированные команды
 	this.telegram_class.on('message', (msg)=> {
 		try {
