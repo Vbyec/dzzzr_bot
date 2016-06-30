@@ -23,6 +23,9 @@ var BotClass = function (configuration_file) {
 	this.telegram_class.answer = (msg, text, option) => {
 		this.telegram_class.sendMessage(msg.chat.id, text, option);
 	};
+	this.telegram_class.answerError = (msg, text) => {
+		this.telegram_class.answer(msg, '❗️❗️❗️<b>' + text + '</b>❗️❗️❗️', {parse_mode: 'HTML'});
+	};
 	this.telegram_class.send_location = (msg, latitude, longitude, title) => {
 		if (title && typeof  title == "string") {
 			this.telegram_class.sendMessage(msg.chat.id, title).then(()=> {
@@ -52,6 +55,7 @@ var BotClass = function (configuration_file) {
 	};
 
 	this.notifyAllAdmins = msg=>this.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, msg));
+	this.notifyErrorAllAdmins = msg=>this.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, '❗️❗️❗️<b>' + msg + '</b>❗️❗️❗️', {parse_mode: 'HTML'}));
 
 	// Задаем стартовые значения переменным бота
 	this.admin_user = configuration.admin_user;
@@ -84,9 +88,9 @@ var BotClass = function (configuration_file) {
 	// Админские команды, работают даже в незарегистрированных чатах.
 	this.addCommand(/^\/man$/, true, false, msg =>
 		this.telegram_class.answer(msg, this.commands
-				.filter(el=>el.need_admin && el.description)
-				.map(el=>el.regexp.toString().match(/\\(\/.*)\//)[1].replace('$', '') + " - " + el.description)
-				.join("\n")
+			.filter(el=>el.need_admin && el.description)
+			.map(el=>el.regexp.toString().match(/\\(\/.*)\//)[1].replace('$', '') + " - " + el.description)
+			.join("\n")
 		));
 	this.addCommand(/^\/register_chat$/, true, false, msg => {
 		this.addRegisteredChat(msg.chat.id);
@@ -141,7 +145,7 @@ var BotClass = function (configuration_file) {
 
 	this.addCommand(/^\/list$/, false, true, msg => {
 		this.currentEngine.getPage().then(
-				page => {
+			page => {
 				var list = this.currentEngine.getCodeList(page);
 				if (list.length) {
 					this.telegram_class.answer(msg, list.map(function (sector) {

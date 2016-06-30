@@ -20,6 +20,7 @@ var ClassicEngine = function (configuration, bot) {
 				pass: configuration.classic.pin
 			}
 		});
+		return this;
 	};
 	this.response_codes = {
 		1: "Игра не началась",
@@ -66,7 +67,7 @@ var ClassicEngine = function (configuration, bot) {
 									})
 								}, 2000);
 							})
-							.catch(message=> this.bot.telegram_class.answer(msg, message));
+							.catch(message=> this.bot.telegram_class.answerError(msg, message));
 						this.watcher = setInterval(()=> {
 							this.getPage()
 								.then(page=> {
@@ -96,7 +97,10 @@ var ClassicEngine = function (configuration, bot) {
 		this.bot.addCommand(/^\/set_pin/, true, false, msg => {
 			assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пин.");
 			configuration.classic.pin = msg.text.match(/.*\s(.*)/)[1].trim();
-			this.setRequest();
+			this.authorize()
+				.then(auth=> this.getPage())
+				.then(message=> this.bot.telegram_class.answer(msg, "Game auth: true"))
+				.catch(message=> this.bot.telegram_class.answerError(msg, message));
 			this.bot.telegram_class.reply(msg, "Новый пин:" + configuration.classic.pin);
 		}, "Устанавливает пин на текущую игру.");
 
@@ -121,15 +125,22 @@ var ClassicEngine = function (configuration, bot) {
 						})
 					}, 2000);
 				})
-				.catch(message=> this.bot.telegram_class.answer(msg, message));
+				.catch(message=> this.bot.telegram_class.answerError(msg, message));
 		}, "Выдает текст текущего задания.");
-		this.setRequest();
-		this.fuckCloudFlare()
-			.then(status=> {
-				this.bot.notifyAllAdmins("CloudFlare check " + status);
-				this.login().then(msg=>this.bot.notifyAllAdmins("Auth " + msg));
-			})
-			.catch(status=> this.bot.notifyAllAdmins("CloudFlare check " + status));
+		this.authorize();
+	};
+
+	this.authorize = function () {
+		return new Promise(resolve=> {
+			this.setRequest()
+				.fuckCloudFlare()
+				.then(status=> this.bot.notifyAllAdmins("CloudFlare check: " + status))
+				.catch(status=> this.bot.notifyAllAdmins("CloudFlare check: " + status))
+				.then(msg=> this.login())
+				.then(msg=> this.bot.notifyAllAdmins("Engine auth: true"))
+				.then(msg=> resolve())
+				.catch(msg=>this.bot.notifyErrorAllAdmins("Engine auth: false"));
+		})
 	};
 
 	this.fuckCloudFlare = function () {
@@ -179,7 +190,7 @@ var ClassicEngine = function (configuration, bot) {
 	};
 
 	this.login = function () {
-		return new Promise((resolve)=> {
+		return new Promise((resolve, reject)=> {
 			this.request.post(
 				{
 					url: "http://classic.dzzzr.ru/moscow/",
@@ -193,7 +204,7 @@ var ClassicEngine = function (configuration, bot) {
 					if (!error && response.statusCode == 200) {
 						body = iconv.decode(body, 'win1251');
 						this.authorised = !!body.match("Здравствуйте, " + configuration.classic.login);
-						resolve(this.authorised);
+						this.authorised ? resolve() : reject();
 					}
 				}
 			);
@@ -277,7 +288,7 @@ var ClassicEngine = function (configuration, bot) {
 				url: "http://classic.dzzzr.ru/moscow/go",
 				encoding: 'binary'
 			}, function (error, response, body) {
-				if (response.statusCode == 401) reject('Ошибка авторизации');
+				if (response.statusCode == 401) reject('Game auth: false');
 				body = iconv.decode(body, 'win1251');
 				if (match = body.match(/начнется (.+).<br>Ждем вас к началу игры/))reject('Игра еще не началась. Старт ' + match[1]);
 				if (!error && response.statusCode == 200) {
@@ -288,15 +299,6 @@ var ClassicEngine = function (configuration, bot) {
 	};
 	return this;
 };
-
-
-function encode_utf8(s) {
-	return unescape(encodeURIComponent(s));
-}
-
-function decode_utf8(s) {
-	return decodeURIComponent(escape(s));
-}
 
 function pad(num, size) {
 	var s = num + "";
