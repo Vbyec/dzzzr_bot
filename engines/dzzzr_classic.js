@@ -7,6 +7,7 @@ entities = new Entities();
 var ClassicEngine = function (configuration, bot) {
 	this.request = {};
 	this.bot = bot;
+	this.city = configuration.classic.city || 'moscow';
 	this.watcher = {};
 	this.setRequest = function () {
 		this.request = require('request').defaults({
@@ -105,7 +106,7 @@ var ClassicEngine = function (configuration, bot) {
 		}, "Устанавливает пин на текущую игру.");
 
 		this.bot.addCommand(/^\/get_url/, false, true, msg => {
-			this.bot.telegram_class.answer(msg, "http://" + configuration.classic.http_login + ":" + configuration.classic.pin + "@classic.dzzzr.ru/moscow/go/");
+			this.bot.telegram_class.answer(msg, "http://" + configuration.classic.http_login + ":" + configuration.classic.pin + "@classic.dzzzr.ru/" + this.city + "/go/");
 		}, "Выдает URL на текущую игру.");
 
 		this.bot.addCommand(/^\/get_task/, false, true, msg => {
@@ -147,7 +148,7 @@ var ClassicEngine = function (configuration, bot) {
 		return new Promise((resolve, reject)=> {
 			this.request.get(
 				{
-					url: "http://classic.dzzzr.ru/moscow/"
+					url: "http://classic.dzzzr.ru/" + this.city + "/"
 				}, (error, response, body) => {
 					if (response.statusCode == 200) {
 						resolve(' no CloudFlare');
@@ -193,7 +194,7 @@ var ClassicEngine = function (configuration, bot) {
 		return new Promise((resolve, reject)=> {
 			this.request.post(
 				{
-					url: "http://classic.dzzzr.ru/moscow/",
+					url: "http://classic.dzzzr.ru/" + this.city + "/",
 					encoding: 'binary',
 					form: {
 						action: "auth",
@@ -214,7 +215,7 @@ var ClassicEngine = function (configuration, bot) {
 		var self = this;
 		this.request.post(
 			{
-				uri: "http://classic.dzzzr.ru/moscow/go/",
+				uri: "http://classic.dzzzr.ru/" + this.city + "/go/",
 				encoding: 'binary',
 				form: {
 					cod: code,
@@ -285,7 +286,7 @@ var ClassicEngine = function (configuration, bot) {
 	this.getPage = function () {
 		return new Promise((resolve, reject) => {
 			this.request.get({
-				url: "http://classic.dzzzr.ru/moscow/go",
+				url: "http://classic.dzzzr.ru/" + this.city + "/go",
 				encoding: 'binary'
 			}, function (error, response, body) {
 				if (response.statusCode == 401) reject('Game auth: false');
