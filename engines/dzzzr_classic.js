@@ -56,7 +56,7 @@ var ClassicEngine = function (configuration, bot) {
 							.then(page=> {
 								let task = this.getTask(page);
 								this.bot.telegram_class.answer(msg, task.text);
-								task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, request(img)));
+								task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, this.request(img)));
 								setTimeout(() => {
 									task.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
 										var location = element.match(/\d{2}[.,]\d{2,8}/ig);
@@ -76,7 +76,7 @@ var ClassicEngine = function (configuration, bot) {
 									if (spoiler.text) {
 										clearInterval(this.watcher);
 										this.bot.telegram_class.answer(msg, spoiler.text);
-										spoiler.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, request(img)));
+										spoiler.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, this.request(img)));
 										setTimeout(() => {
 											spoiler.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
 												var location = element.match(/\d{2}[.,]\d{2,8}/ig);
@@ -114,7 +114,7 @@ var ClassicEngine = function (configuration, bot) {
 				.then(page=> {
 					let task = this.getTask(page);
 					this.bot.telegram_class.answer(msg, task.text);
-					task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, request(img)));
+					task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, this.request(img)));
 					setTimeout(() => {
 						task.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
 							var location = element.match(/\d{2}[.,]\d{2,8}/ig);
