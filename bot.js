@@ -26,14 +26,15 @@ var BotClass = function (configuration_file) {
 	this.telegram_class.answerError = (msg, text) => {
 		this.telegram_class.answer(msg, '❗️❗️❗️<b>' + text + '</b>❗️❗️❗️', {parse_mode: 'HTML'});
 	};
-	this.telegram_class.send_location = (msg, latitude, longitude, title) => {
-		if (title && typeof  title == "string") {
-			this.telegram_class.sendMessage(msg.chat.id, title).then(()=> {
-				this.telegram_class.sendLocation(msg.chat.id, latitude, longitude);
-			});
-		} else {
-			this.telegram_class.sendLocation(msg.chat.id, latitude, longitude);
-		}
+	this.telegram_class.send_location = (msg, latitude, longitude, title) => this.telegram_class.sendVenue(msg.chat.id,latitude,longitude,title);
+
+	this.telegram_class.sendVenue = function (chatId, latitude, longitude, title, address, form = {}) {
+		form.chat_id = chatId;
+		form.latitude = latitude;
+		form.longitude = longitude;
+		form.title = title;
+		form.address = address;
+		return this._request('sendVenue', {form});
 	};
 
 	// Добавляем методы в класс бота
@@ -133,13 +134,11 @@ var BotClass = function (configuration_file) {
 		, "Выводит эту информацию.");
 
 	this.addCommand(this.location_regex, false, true, msg => {
-		msg.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+		msg.text.match(/(\d*[а-я]+\s?){0,2}.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
 			var location = element.match(/\d{2}[.,]\d{2,8}/ig);
-			var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+			var title = element.match(/(\d*[а-я]+\s?){0,2}/i);
 			title = title != null ? title[0] : "";
-			setTimeout(() => {
-				this.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
-			}, index * 3000);
+			this.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
 		});
 	});
 

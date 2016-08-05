@@ -58,13 +58,11 @@ var ClassicEngine = function (configuration, bot) {
 								this.bot.telegram_class.answer(msg, task.text);
 								task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, this.request(img)));
 								setTimeout(() => {
-									task.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
-										var location = element.match(/\d{2}[.,]\d{2,8}/ig);
-										var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+									task.text.match(/(\d*[а-я]+\s?){0,2}?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+										let location = element.match(/\d{2}[.,]\d{2,8}/ig);
+										let title = element.match(/(\d*[а-я]+\s?){1,2}/i);
 										title = title != null ? title[0] : "";
-										setTimeout(() => {
-											this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
-										}, index * 3000);
+										this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
 									})
 								}, 2000);
 							})
@@ -78,13 +76,11 @@ var ClassicEngine = function (configuration, bot) {
 										this.bot.telegram_class.answer(msg, spoiler.text);
 										spoiler.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, this.request(img)));
 										setTimeout(() => {
-											spoiler.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+											spoiler.text.match(/(\d*[а-я]+\s?){0,2}.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
 												var location = element.match(/\d{2}[.,]\d{2,8}/ig);
-												var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+												var title = element.match(/(\d*[а-я]+\s?){0,2}/ig);
 												title = title != null ? title[0] : "";
-												setTimeout(() => {
-													this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
-												}, index * 3000);
+												this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
 											})
 										}, 2000);
 									}
@@ -116,13 +112,11 @@ var ClassicEngine = function (configuration, bot) {
 					this.bot.telegram_class.answer(msg, task.text);
 					task.images.map(img=>this.bot.telegram_class.sendPhoto(msg.chat.id, this.request(img)));
 					setTimeout(() => {
-						task.text.match(/([а-яА-я]+\s[а-яА-я]+)?.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
+						task.text.match(/(\d*[а-я]+\s?){0,2}.{0,4}\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/ig).forEach((element, index) => {
 							var location = element.match(/\d{2}[.,]\d{2,8}/ig);
-							var title = element.match(/[а-яА-я]+\s[а-яА-я]+/ig);
+							var title = element.match(/(\d*[а-я]+\s?){0,2}/ig);
 							title = title != null ? title[0] : "";
-							setTimeout(() => {
-								this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
-							}, index * 3000);
+							this.bot.telegram_class.send_location(msg, location[0].replace(/,/, "."), location[1].replace(/,/, "."), title)
 						})
 					}, 2000);
 				})
