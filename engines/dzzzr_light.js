@@ -14,6 +14,7 @@ var LightEngine = function (configuration, bot) {
 	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^!\..*)/i;
 	this.location_regex = /\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/i;
 	this.name = 'light';
+	this.city = configuration.classic.city || 'moscow';
 	this.bot = bot;
 
 	this.init = function () {
@@ -32,7 +33,7 @@ var LightEngine = function (configuration, bot) {
 			this.bot.telegram_class.reply(msg, "Новый пин:" + configuration.light.pin);
 		}, "Устанавливает пин на текущую игру.");
 		this.bot.addCommand(/^\/get_url/, false, true, msg => {
-			this.bot.telegram_class.answer(msg, "http://lite.dzzzr.ru/moscow/go/?pin=" + configuration.light.pin);
+			this.bot.telegram_class.answer(msg, "http://lite.dzzzr.ru/" + this.city + "/go/?pin=" + configuration.light.pin);
 		}, "Выдает URL на текущую игру.");
 
 		this.fuckCloudFlare()
@@ -44,7 +45,7 @@ var LightEngine = function (configuration, bot) {
 		return new Promise((resolve, reject)=> {
 			request.get(
 				{
-					url: "http://lite.dzzzr.ru/moscow/"
+					url: "http://lite.dzzzr.ru/" + this.city + "/"
 				}, (error, response, body) => {
 					if (response.statusCode == 200) {
 						resolve(' no CloudFlare');
@@ -90,7 +91,7 @@ var LightEngine = function (configuration, bot) {
 		var old_this = this;
 		request.post(
 			{
-				uri: "http://lite.dzzzr.ru/moscow/go/?pin=" + configuration.light.pin,
+				uri: "http://lite.dzzzr.ru/" + this.city + "/go/?pin=" + configuration.light.pin,
 				encoding: 'binary',
 				followRedirect: true,
 				form: {
@@ -150,7 +151,7 @@ var LightEngine = function (configuration, bot) {
 	this.getPage = function () {
 		return new Promise((resolve, reject) => {
 			request({
-				uri: "http://lite.dzzzr.ru/moscow/go/?pin=" + configuration.light.pin,
+				uri: "http://lite.dzzzr.ru/" + this.city + "/go/?pin=" + configuration.light.pin,
 				method: 'GET',
 				encoding: 'binary'
 			}, function (error, response, body) {
