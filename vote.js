@@ -22,34 +22,35 @@ var UserVoteSchema = new Schema({
 	comment: String
 });
 
-mongoose.model('Vote', VoteSchema);
-mongoose.model('UserVote', UserVoteSchema);
-
-var VoteDB = mongoose.model('Vote');
-var UserVoteDB = mongoose.model('UserVote');
-
-var VoteClass = function (telegram_class, bot_name) {
+var VoteClass = function (telegram_class, bot_name, db_connection) {
 	this.questions = new DzzzrVoteQuestion(this).get();
 	this.telegram_class = telegram_class;
 	this.bot_name = bot_name;
 	this.chats = [];
+
+	db_connection.model('Vote', VoteSchema);
+	db_connection.model('UserVote', UserVoteSchema);
+
+	this.VoteDB = db_connection.model('Vote');
+	this.UserVoteDB = db_connection.model('UserVote');
+
 	return this;
 };
 
 VoteClass.prototype = {
 	create: function (name) {
 		return new Promise(resolve => {
-			var Vote = new VoteDB();
+			var Vote = new this.VoteDB();
 			Vote.name = name;
 			Vote.active = true;
 			Vote.save().then(record=> resolve(record.id));
 		})
 	},
 	get: function (id) {
-		return new Promise((resolve, reject) =>VoteDB.findById(id).then(record=>record.active ? resolve(record) : reject("Выставление оценок уже завершено")).catch(record=>reject("Не удалось найти такой опрос")));
+		return new Promise((resolve, reject) =>this.VoteDB.findById(id).then(record=>record.active ? resolve(record) : reject("Выставление оценок уже завершено")).catch(record=>reject("Не удалось найти такой опрос")));
 	},
 	getActiveVote: function () {
-		return new Promise(resolve =>VoteDB.findOne({active: true}).then(resolve).catch(record=>reject("Не удалось найти активного опроса")));
+		return new Promise(resolve =>this.VoteDB.findOne({active: true}).then(resolve).catch(record=>reject("Не удалось найти активного опроса")));
 	},
 	start: function (chat_id, user_name, first_name, last_name, vote_id) {
 		this.chats.findIndex(el=>el.id == chat_id) > -1 && this.chats.splice(this.chats.findIndex(el=>el.id == chat_id), 1);
@@ -70,7 +71,7 @@ VoteClass.prototype = {
 			comment: current_chat.comment,
 			vote_id: current_chat.vote_id
 		};
-		UserVoteDB.findOneAndUpdate({vote_id: current_chat.vote_id, user_id: current_chat.id}, NewData, {upsert: true}, ()=>a = 1);
+		this.UserVoteDB.findOneAndUpdate({vote_id: current_chat.vote_id, user_id: current_chat.id}, NewData, {upsert: true}, ()=>a = 1);
 		let text =
 			"<b>Спасибо за участие в выставлении оценок!\n</b>" +
 			"<pre>Вы оценили игру так:\n" +
@@ -123,7 +124,7 @@ VoteClass.prototype = {
 		};
 		let reviews = [];
 		return new Promise(resolve=> {
-				UserVoteDB.find({vote_id: vote_id}).then(a=> {
+				this.UserVoteDB.find({vote_id: vote_id}).then(a=> {
 					a.forEach(el=> {
 							list.push({
 								hq: el.hq == null ? '--' : el.hq,

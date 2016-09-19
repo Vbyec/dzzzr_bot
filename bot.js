@@ -7,10 +7,10 @@ var BotClass = function (configuration_file) {
 		mongoose = require('mongoose'),
 		TelegramBot = require('node-telegram-bot-api'),
 		Command = require('./command'),
-		Vote = require('./vote');
-	mongoose.connect('mongodb://localhost/Dzzzr_' + configuration.bot_name);
+		Vote = require('./vote'),
+		db_connection = mongoose.createConnection('mongodb://localhost/Dzzzr_' + configuration.bot_name);
 	this.telegram_class = new TelegramBot(configuration.token, {polling: true});
-	var current_vote = new Vote(this.telegram_class, configuration.bot_name);
+	var current_vote = new Vote(this.telegram_class, configuration.bot_name, db_connection);
 	log4js.loadAppender('file');
 	log4js.addAppender(log4js.appenders.file(configuration.log_path + "/" + configuration.bot_name + ".log"), configuration.bot_name);
 	var logger = new log4js.getLogger(configuration.bot_name);
