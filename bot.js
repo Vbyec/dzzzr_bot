@@ -124,10 +124,10 @@ var BotClass = function (configuration_file) {
 	}, "Добавляет указанного пользователя в админы боты.");
 
 	this.addCommand(/^\/create_game_vote/, true, false, msg => {
-		assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указано название игры.");
-		let vote_name = msg.text.match(/.*\s(.*)/)[1].trim();
+		let vote_name = msg.text.match(/^\/create_game_vote(.*)/)[1].trim();
+		assertNotEmpty(vote_name, "Не указано название игры.");
 		current_vote.create(vote_name).then(id=>this.telegram_class.answer(msg,
-				`Начинаем голосование команды за ${vote_name} игру.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=${id}`, {disable_web_page_preview: true})
+				`Начинаем голосование команды за игру ${vote_name}.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=${id}`, {disable_web_page_preview: true})
 		);
 	}, "Создает опрос для простановки оценок за игру.");
 
