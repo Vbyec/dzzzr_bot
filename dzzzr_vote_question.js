@@ -31,7 +31,7 @@ var DzzzrVoteQuestion = function (vote_object) {
 					resolve();
 				});
 			}),
-		new VoteQuestion(1, vote_object, 'Выставите оценку за Штаб <i>(Любое число от 0 до 40, можно воспользоваться клавиатурой, или набрать самому)</i>', [[
+		new VoteQuestion(1, vote_object, 'Выставите оценку за Штаб <i>(Любое число от 0 до 40, можно воспользоваться клавиатурой или набрать самому)</i>', [[
 				{text: '0', callback_data: '0'},
 				{text: '10', callback_data: '10'},
 				{text: '20', callback_data: '20'},
@@ -50,7 +50,7 @@ var DzzzrVoteQuestion = function (vote_object) {
 					}
 				});
 			}),
-		new VoteQuestion(2, vote_object, 'Выставите оценку за Поле <i>(Любое число от 0 до 40, можно воспользоваться клавиатурой, или набрать самому)</i>', [[
+		new VoteQuestion(2, vote_object, 'Выставите оценку за Поле <i>(Любое число от 0 до 40, можно воспользоваться клавиатурой или набрать самому)</i>', [[
 				{text: '0', callback_data: '0'},
 				{text: '10', callback_data: '10'},
 				{text: '20', callback_data: '20'},
@@ -69,7 +69,7 @@ var DzzzrVoteQuestion = function (vote_object) {
 					}
 				});
 			}),
-		new VoteQuestion(3, vote_object, 'Выставите оценку за Штаб <i>(Любое число от 0 до 40, можно воспользоваться клавиатурой, или набрать самому)</i>', [[
+		new VoteQuestion(3, vote_object, 'Выставите оценку за Штаб <i>(Любое число от 0 до 40, можно воспользоваться клавиатурой или набрать самому)</i>', [[
 				{text: '0', callback_data: '0'},
 				{text: '10', callback_data: '10'},
 				{text: '20', callback_data: '20'},
