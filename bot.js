@@ -153,7 +153,7 @@ var BotClass = function (configuration_file) {
 	this.addCommand(/^\/vote_stat__.*/, true, false, msg => {
 		let vote_id = msg.text.split('__')[1];
 		current_vote.getStat(vote_id).then(stat=> {
-			let list_message = "<b>Список</b>\n<pre>#  штаб  поле  авторам\n";
+			let list_message = "<b>Список</b>\n<pre># штаб поле авторам\n";
 			stat.list.forEach((el, index)=> {
 				let number = index + 1;
 				let hq = el.hq == null ? "-" : el.hq;
@@ -161,11 +161,11 @@ var BotClass = function (configuration_file) {
 				let first_name = el.first_name == null ? "" : el.first_name;
 				let last_name = el.last_name == null ? "" : " " + el.last_name;
 				let user_name = el.user_name == null ? "" : ` (@${el.user_name})`;
-				list_message += number + " ".repeat(2 - number.toString().length + 2);
-				list_message += hq + " ".repeat(2 - hq.toString().length + 4);
-				list_message += field + " ".repeat(2 - field.toString().length + 5);
+				list_message += number + " ".repeat(2 - number.toString().length + 1);
+				list_message += hq + " ".repeat(2 - hq.toString().length + 3);
+				list_message += field + " ".repeat(2 - field.toString().length + 4);
 				list_message += el.author_fee + " ".repeat(3 - el.author_fee.toString().length + 3);
-				list_message += " — ";
+				list_message += "— ";
 				list_message += `${first_name}${last_name}${user_name}`;
 				list_message += '\n';
 			});
@@ -183,7 +183,7 @@ var BotClass = function (configuration_file) {
 				`- 100% ${stat.result.author_fee[100]} голосов`;
 			this.telegram_class.answer(msg, result_message, {parse_mode: 'HTML'});
 
-			let reviews_message = "<b>Результаты:</b>\n";
+			let reviews_message = "<b>Отзывы:</b>\n";
 			stat.reviews.forEach(el=> {
 				let first_name = el.first_name == null ? "" : el.first_name;
 				let last_name = el.last_name == null ? "" : " " + el.last_name;
