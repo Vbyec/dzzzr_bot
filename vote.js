@@ -48,6 +48,9 @@ VoteClass.prototype = {
 	get: function (id) {
 		return new Promise((resolve, reject) =>VoteDB.findById(id).then(record=>record.active ? resolve(record) : reject("Выставление оценок уже завершено")).catch(record=>reject("Не удалось найти такой опрос")));
 	},
+	getActiveVote: function () {
+		return new Promise(resolve =>VoteDB.findOne({active: true}).then(resolve).catch(record=>reject("Не удалось найти активного опроса")));
+	},
 	start: function (chat_id, user_name, first_name, last_name, vote_id) {
 		this.chats.findIndex(el=>el.id == chat_id) > -1 && this.chats.splice(this.chats.findIndex(el=>el.id == chat_id), 1);
 		this.chats.push({id: chat_id, user_id: chat_id, user_name: user_name, first_name: first_name, last_name: last_name, current_question: 0, message_id: 0, vote_id: vote_id, field: null, hq: null});
@@ -71,12 +74,11 @@ VoteClass.prototype = {
 		let text =
 			"<b>Спасибо за участие в выставлении оценок!\n</b>" +
 			"<pre>Вы оценили игру так:\n" +
-			(current_chat.hq ? `Штаб: ${current_chat.hq}\n` : "") +
-			(current_chat.field ? `Поле: ${current_chat.field}\n` : "") +
+			(current_chat.hq != null ? `Штаб: ${current_chat.hq}\n` : "") +
+			(current_chat.field != null ? `Поле: ${current_chat.field}\n` : "") +
 			`Взнос авторам: ${current_chat.author_fee}%\n` +
 			(current_chat.comment != null ? `Комментарий: ${current_chat.comment}\n` : "") +
-			"\nЕсли хотите поменять свое мнение - перейдите по ссылке и пройдите опрос еще раз.</pre>\n" +
-			`https://telegram.me/${this.bot_name}?start=${current_chat.vote_id}`;
+			"</pre>/start_vote -- Если хотите поменять свое мнение";
 		this.telegram_class.editMessageText(text, {chat_id: chat_id, message_id: current_chat.message_id, reply_markup: null, parse_mode: 'HTML', disable_web_page_preview: true});
 	},
 	nextQuestion: function (chat_id) {
@@ -153,6 +155,48 @@ VoteClass.prototype = {
 				});
 			}
 		)
+	},
+	getStatMessages: function (vote_id) {
+		return new Promise(resolve=> {
+			this.getStat(vote_id).then(stat=> {
+				let list_message = "<b>Список</b>\n<pre># штаб поле авторам\n";
+				stat.list.forEach((el, index)=> {
+					let number = index + 1;
+					let hq = el.hq == null ? "-" : el.hq;
+					let field = el.field == null ? "-" : el.field;
+					let first_name = el.first_name == null ? "" : el.first_name;
+					let last_name = el.last_name == null ? "" : " " + el.last_name;
+					let user_name = el.user_name == null ? "" : ` (@${el.user_name})`;
+					list_message += number + " ".repeat(2 - number.toString().length + 1);
+					list_message += hq + " ".repeat(2 - hq.toString().length + 3);
+					list_message += field + " ".repeat(2 - field.toString().length + 4);
+					list_message += el.author_fee + " ".repeat(3 - el.author_fee.toString().length + 3);
+					list_message += "— ";
+					list_message += `${first_name}${last_name}${user_name}`;
+					list_message += '\n';
+				});
+				list_message += "</pre>";
+
+				let result_message = "<b>Результаты:</b>\n" +
+					`Всего проголосовало ${stat.result.total} человек\n` +
+					`За <i>штаб</i> выставлено ${stat.result.hq.count} оценок с средним балом ${(stat.result.hq.summary / stat.result.hq.count).toFixed(1)}\n` +
+					`За <i>поле</i> выставлено ${stat.result.field.count} оценок с средним балом ${(stat.result.field.summary / stat.result.field.count).toFixed(1)}\n` +
+					`Средний между полем и штабом: ${(((stat.result.hq.summary / stat.result.hq.count) + (stat.result.field.summary / stat.result.field.count)) / 2).toFixed(1)}\n` +
+					"Гонорар авторам:\n" +
+					`- 0% ${stat.result.author_fee[0]} голосов\n` +
+					`- 50% ${stat.result.author_fee[50]} голосов\n` +
+					`- 100% ${stat.result.author_fee[100]} голосов`;
+
+				let reviews_message = "<b>Отзывы:</b>\n";
+				stat.reviews.forEach(el=> {
+					let first_name = el.first_name == null ? "" : el.first_name;
+					let last_name = el.last_name == null ? "" : " " + el.last_name;
+					let user_name = el.user_name == null ? "" : ` (@${el.user_name})`;
+					reviews_message += `«${el.comment}» — ${first_name}${last_name}${user_name}\n\n`;
+				});
+				resolve([list_message, result_message, reviews_message]);
+			});
+		})
 	}
 };
 

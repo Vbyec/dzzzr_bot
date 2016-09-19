@@ -92,10 +92,17 @@ var BotClass = function (configuration_file) {
 		}
 	});
 
-	this.addCommand(/^\/start/, false, false, msg => {
-			if (msg.text.match(/.*\s(.*)/)) {
-				let vote_id = msg.text.match(/.*\s(.*)/)[1].trim();
-				current_vote.get(vote_id).then(a=>current_vote.start(msg.chat.id, msg.chat.username, msg.chat.first_name, msg.chat.last_name, vote_id)).catch(message=> this.telegram_class.answer(msg, message));
+	this.addCommand(/^\/start\s/, false, false, msg => {
+			let start_command = msg.text.match(/\/start\s(.*)/)[1].trim();
+			switch (start_command) {
+				case 'vote':
+					current_vote
+						.getActiveVote()
+						.then(vote=>current_vote.start(msg.chat.id, msg.chat.username, msg.chat.first_name, msg.chat.last_name, vote.id))
+						.catch(message=> this.telegram_class.answer(msg, message));
+					break;
+				default :
+					break;
 			}
 		}
 	);
@@ -127,7 +134,7 @@ var BotClass = function (configuration_file) {
 		let vote_name = msg.text.match(/^\/create_game_vote(.*)/)[1].trim();
 		assertNotEmpty(vote_name, "Не указано название игры.");
 		current_vote.create(vote_name).then(id=>this.telegram_class.answer(msg,
-				`Начинаем голосование команды за игру ${vote_name}.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=${id}`, {disable_web_page_preview: true})
+				`Начинаем голосование команды за игру ${vote_name}.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true})
 		);
 	}, "Создает опрос для простановки оценок за игру.");
 
@@ -150,49 +157,12 @@ var BotClass = function (configuration_file) {
 		this.telegram_class.answer(msg, "Теперь коды <strong>ЗАПРЕЩЕНО</strong> вбивать", {parse_mode: 'HTML'});
 	}, "Запрещает вбивать коды.");
 
-	this.addCommand(/^\/vote_stat__.*/, true, false, msg => {
-		let vote_id = msg.text.split('__')[1];
-		current_vote.getStat(vote_id).then(stat=> {
-			let list_message = "<b>Список</b>\n<pre># штаб поле авторам\n";
-			stat.list.forEach((el, index)=> {
-				let number = index + 1;
-				let hq = el.hq == null ? "-" : el.hq;
-				let field = el.field == null ? "-" : el.field;
-				let first_name = el.first_name == null ? "" : el.first_name;
-				let last_name = el.last_name == null ? "" : " " + el.last_name;
-				let user_name = el.user_name == null ? "" : ` (@${el.user_name})`;
-				list_message += number + " ".repeat(2 - number.toString().length + 1);
-				list_message += hq + " ".repeat(2 - hq.toString().length + 3);
-				list_message += field + " ".repeat(2 - field.toString().length + 4);
-				list_message += el.author_fee + " ".repeat(3 - el.author_fee.toString().length + 3);
-				list_message += "— ";
-				list_message += `${first_name}${last_name}${user_name}`;
-				list_message += '\n';
-			});
-			list_message += "</pre>";
-			this.telegram_class.answer(msg, list_message, {parse_mode: 'HTML'});
-
-			let result_message = "<b>Результаты:</b>\n" +
-				`Всего проголосовало ${stat.result.total} человек\n` +
-				`За <i>штаб</i> выставлено ${stat.result.hq.count} оценок с средним балом ${(stat.result.hq.summary / stat.result.hq.count).toFixed(1)}\n` +
-				`За <i>поле</i> выставлено ${stat.result.field.count} оценок с средним балом ${(stat.result.field.summary / stat.result.field.count).toFixed(1)}\n` +
-				`Средний между полем и штабом: ${(((stat.result.hq.summary / stat.result.hq.count) + (stat.result.field.summary / stat.result.field.count)) / 2).toFixed(1)}\n` +
-				"Гонорар авторам:\n" +
-				`- 0% ${stat.result.author_fee[0]} голосов\n` +
-				`- 50% ${stat.result.author_fee[50]} голосов\n` +
-				`- 100% ${stat.result.author_fee[100]} голосов`;
-			this.telegram_class.answer(msg, result_message, {parse_mode: 'HTML'});
-
-			let reviews_message = "<b>Отзывы:</b>\n";
-			stat.reviews.forEach(el=> {
-				let first_name = el.first_name == null ? "" : el.first_name;
-				let last_name = el.last_name == null ? "" : " " + el.last_name;
-				let user_name = el.user_name == null ? "" : ` (@${el.user_name})`;
-				reviews_message += `«${el.comment}» — ${first_name}${last_name}${user_name}\n\n`;
-			});
-			this.telegram_class.answer(msg, reviews_message, {parse_mode: 'HTML'});
-		});
-	});
+	this.addCommand(/^\/vote_stats/, true, false, msg => {
+		current_vote.getActiveVote()
+			.then(record=> current_vote.getStatMessages(record.id))
+			.then(messages=>messages.forEach(message=>this.telegram_class.answer(msg, message, {parse_mode: 'HTML'})
+			));
+	}, "Выводит информацию о текущем активном выставлении оценок");
 
 // Пользовательские команды, работают только в зарегистрированных чатах
 	this.addCommand(/^\/help$/, false, true, msg =>
@@ -229,6 +199,14 @@ var BotClass = function (configuration_file) {
 			}
 		).catch(message=> this.telegram_class.answer(msg, message));
 	}, "Выводит список оставшихся кодов.");
+	this.addCommand(/^\/start_vote/, false, false, msg => {
+		if (msg.chat.type == 'private') {
+			current_vote
+				.getActiveVote()
+				.then(vote=>current_vote.start(msg.chat.id, msg.chat.username, msg.chat.first_name, msg.chat.last_name, vote.id))
+				.catch(message=> this.telegram_class.answer(msg, message));
+		}
+	}, "Начинает опрос на выставление оценок");
 	this.notifyAllAdmins("Bot started");
 	this.currentEngine.init();
 	logger.info("Bot started.");
