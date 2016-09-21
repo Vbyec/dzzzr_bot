@@ -27,6 +27,7 @@ var VoteClass = function (telegram_class, bot_name, db_connection) {
 	this.telegram_class = telegram_class;
 	this.bot_name = bot_name;
 	this.chats = [];
+	this.name="";
 
 	db_connection.model('Vote', VoteSchema);
 	db_connection.model('UserVote', UserVoteSchema);
@@ -60,6 +61,20 @@ VoteClass.prototype = {
 		this.chats.push({id: chat_id, user_id: chat_id, user_name: user_name, first_name: first_name, last_name: last_name, current_question: 0, message_id: 0, vote_id: vote_id, field: null, hq: null});
 		this.nextQuestion(chat_id);
 	},
+    getVoteName: function (id) {
+        return new Promise(resolve=> {
+            if (this.name) {
+                this.get(id)
+                    .then(vote=> {
+                        this.name = vote.name;
+                        resolve(this.name);
+                    })
+            }
+            else {
+                resolve(this.name);
+            }
+        })
+    },
 	end: function (chat_id) {
 		let current_chat = this.findChat(chat_id);
 		let NewData = {
@@ -103,12 +118,22 @@ VoteClass.prototype = {
 	},
 	sendNewQuestion: function (chat_id) {
 		let question = this.findCurrentQuestion(chat_id);
-		this.telegram_class.sendMessage(chat_id, question.text, {reply_markup: {inline_keyboard: question.variants}}).then(a=>this.findChat(chat_id).message_id = a.message_id);
+        this.getVoteName(question.vote_id)
+            .then(msg=>this.telegram_class.sendMessage(chat_id, `<b>${this.name}</b>\n` + question.text, {
+                reply_markup: {inline_keyboard: question.variants},
+                parse_mode: 'HTML'
+            }).then(a=>this.findChat(chat_id).message_id = a.message_id));
 	},
 	updateQuestion: function (chat_id) {
 		let question = this.findCurrentQuestion(chat_id);
 		let message_id = this.findChat(chat_id).message_id;
-		this.telegram_class.editMessageText(question.text, {chat_id: chat_id, message_id: message_id, reply_markup: question.variants ? {inline_keyboard: question.variants} : null, parse_mode: 'HTML'});
+        this.getVoteName(question.vote_id)
+            .then(this.telegram_class.editMessageText(`<b>${this.name}</b>\n` + question.text, {
+                chat_id: chat_id,
+                message_id: message_id,
+                reply_markup: question.variants ? {inline_keyboard: question.variants} : null,
+                parse_mode: 'HTML'
+            }));
 	},
 	haveTextArea: function (chat_id) {
 		return this.findChat(chat_id) && this.findCurrentQuestion(chat_id) && this.findCurrentQuestion(chat_id).textarea;
