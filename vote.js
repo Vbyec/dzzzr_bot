@@ -46,6 +46,9 @@ VoteClass.prototype = {
 			Vote.save().then(record=> resolve(record.id));
 		})
 	},
+	close: function (id) {
+		return new Promise(resolve=>this.VoteDB.findByIdAndUpdate(id, {$set: {active: false}}, {new: true}, msg=>resolve()));
+	},
 	get: function (id) {
 		return new Promise((resolve, reject) =>this.VoteDB.findById(id).then(record=>record.active ? resolve(record) : reject("Выставление оценок уже завершено")).catch(record=>reject("Не удалось найти такой опрос")));
 	},

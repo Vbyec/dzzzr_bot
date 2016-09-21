@@ -130,8 +130,8 @@ var BotClass = function (configuration_file) {
 		this.telegram_class.reply(msg, "@" + new_user + " добавлен в список админов.");
 	}, "Добавляет указанного пользователя в админы боты.");
 
-	this.addCommand(/^\/create_game_vote/, true, false, msg => {
-		let vote_name = msg.text.match(/^\/create_game_vote(.*)/)[1].trim();
+	this.addCommand(/^\/vote_create/, true, false, msg => {
+		let vote_name = msg.text.match(/^\/vote_create\s(.*)/)[1].trim();
 		assertNotEmpty(vote_name, "Не указано название игры.");
 		current_vote.create(vote_name).then(id=>this.telegram_class.answer(msg,
 				`Начинаем голосование команды за игру ${vote_name}.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true})
@@ -157,11 +157,17 @@ var BotClass = function (configuration_file) {
 		this.telegram_class.answer(msg, "Теперь коды <strong>ЗАПРЕЩЕНО</strong> вбивать", {parse_mode: 'HTML'});
 	}, "Запрещает вбивать коды.");
 
-	this.addCommand(/^\/vote_stats/, true, false, msg => {
+	this.addCommand(/^\/vote_stats$/, true, false, msg => {
 		current_vote.getActiveVote()
 			.then(record=> current_vote.getStatMessages(record.id))
 			.then(messages=>messages.forEach(message=>this.telegram_class.answer(msg, message, {parse_mode: 'HTML'})
 			));
+	}, "Выводит информацию о текущем активном выставлении оценок");
+
+	this.addCommand(/^\/vote_close$/, true, false, msg => {
+		current_vote.getActiveVote()
+			.then(record=> current_vote.close(record.id))
+			.then(message=>this.telegram_class.answer(msg, "Опрос закрыт."));
 	}, "Выводит информацию о текущем активном выставлении оценок");
 
 // Пользовательские команды, работают только в зарегистрированных чатах
