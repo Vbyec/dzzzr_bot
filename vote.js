@@ -65,7 +65,7 @@ VoteClass.prototype = {
 	},
     getVoteName: function (id) {
         return new Promise(resolve=> {
-            if (this.name) {
+            if (!this.name) {
                 this.get(id)
                     .then(vote=> {
                         this.name = vote.name;
@@ -120,7 +120,7 @@ VoteClass.prototype = {
 	},
 	sendNewQuestion: function (chat_id) {
 		let question = this.findCurrentQuestion(chat_id);
-        this.getVoteName(question.vote_id)
+        this.getVoteName(this.findChat(chat_id).vote_id)
             .then(msg=>this.telegram_class.sendMessage(chat_id, `<b>${this.name}</b>\n` + question.text, {
                 reply_markup: {inline_keyboard: question.variants},
                 parse_mode: 'HTML'
@@ -129,7 +129,7 @@ VoteClass.prototype = {
 	updateQuestion: function (chat_id) {
 		let question = this.findCurrentQuestion(chat_id);
 		let message_id = this.findChat(chat_id).message_id;
-        this.getVoteName(question.vote_id)
+        this.getVoteName(this.findChat(chat_id).vote_id)
             .then(this.telegram_class.editMessageText(`<b>${this.name}</b>\n` + question.text, {
                 chat_id: chat_id,
                 message_id: message_id,
