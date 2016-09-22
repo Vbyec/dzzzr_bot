@@ -54,7 +54,9 @@ VoteClass.prototype = {
 		return new Promise((resolve, reject) =>this.VoteDB.findById(id).then(record=>record.active ? resolve(record) : reject("Выставление оценок уже завершено")).catch(record=>reject("Не удалось найти такой опрос")));
 	},
 	getActiveVote: function () {
-		return new Promise((resolve,reject) =>this.VoteDB.findOne({active: true}).then(resolve).catch(record=>reject("Не удалось найти активного опроса")));
+        return new Promise((resolve, reject) =>this.VoteDB.findOne({active: true}).then(record=> {
+            record ? resolve(record) : reject("Не удалось найти активного опроса")
+        }));
 	},
 	start: function (chat_id, user_name, first_name, last_name, vote_id) {
 		this.chats.findIndex(el=>el.id == chat_id) > -1 && this.chats.splice(this.chats.findIndex(el=>el.id == chat_id), 1);
