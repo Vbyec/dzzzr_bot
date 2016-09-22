@@ -206,7 +206,7 @@ var BotClass = function (configuration_file) {
 			}
 		).catch(message=> this.telegram_class.answer(msg, message));
 	}, "Выводит список оставшихся кодов.");
-	this.addCommand(/^\/start_vote/, false, false, msg => {
+	this.addCommand(/^\/vote_start/, false, false, msg => {
 		if (msg.chat.type == 'private') {
 			current_vote
 				.getActiveVote()

@@ -99,7 +99,7 @@ VoteClass.prototype = {
 			(current_chat.field != null ? `Поле: ${current_chat.field}\n` : "") +
 			`Взнос авторам: ${current_chat.author_fee}%\n` +
 			(current_chat.comment != null ? `Комментарий: ${current_chat.comment}\n` : "") +
-			"</pre>/start_vote -- Если хотите поменять свое мнение";
+			"</pre>/vote_start -- Если хотите поменять свое мнение";
 		this.telegram_class.editMessageText(text, {chat_id: chat_id, message_id: current_chat.message_id, reply_markup: null, parse_mode: 'HTML', disable_web_page_preview: true});
 	},
 	nextQuestion: function (chat_id) {
