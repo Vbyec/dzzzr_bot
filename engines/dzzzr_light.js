@@ -14,7 +14,7 @@ var LightEngine = function (configuration, bot) {
 	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^!\..*)/i;
 	this.location_regex = /\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/i;
 	this.name = 'light';
-	this.city = configuration.classic.city || 'moscow';
+	this.city = configuration.light.city || 'moscow';
 	this.bot = bot;
 
 	this.init = function () {
