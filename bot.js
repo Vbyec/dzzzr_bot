@@ -7,18 +7,32 @@ var BotClass = function (configuration_file) {
 		mongoose = require('mongoose'),
 		TelegramBot = require('node-telegram-bot-api'),
 		Command = require('./command'),
+		Schema = mongoose.Schema,
 		Vote = require('./vote'),
 		db_connection = mongoose.createConnection('mongodb://localhost/Dzzzr_' + configuration.bot_name);
+	mongoose.Promise = global.Promise;
 	this.telegram_class = new TelegramBot(configuration.token, {polling: true});
 	var current_vote = new Vote(this.telegram_class, configuration.bot_name, db_connection);
 	log4js.loadAppender('file');
 	log4js.addAppender(log4js.appenders.file(configuration.log_path + "/" + configuration.bot_name + ".log"), configuration.bot_name);
 	var logger = new log4js.getLogger(configuration.bot_name);
 	this.logger = logger;
+	this.chats = {};
 	// catch all exceptions
 	process.on('uncaughtException', function (err) {
 		logger.fatal('Caught exception: ' + err + '\n' + err.stack);
 	});
+
+	var UsersInChatSchema = new Schema({
+		user_id: Number,
+		chat_id: Number,
+		user_name: String,
+		first_name: String,
+		last_name: String
+	});
+	db_connection.model('UsersInChat', UsersInChatSchema);
+	this.UsersInChat = db_connection.model('UsersInChat');
+
 
 	// Расширяем функционал телеграмм класса
 	this.telegram_class.reply = (msg, text)=> {
@@ -76,6 +90,19 @@ var BotClass = function (configuration_file) {
 	// Обрабатываем все зарегистрированные команды
 	this.telegram_class.on('message', (msg)=> {
 		try {
+			if (!this.chats.hasOwnProperty(msg.chat.id)) {
+				this.chats[msg.chat.id] = {users:{} };
+			}
+			if (!this.chats[msg.chat.id].users.hasOwnProperty(msg.from.id)) {
+				let NewData = {
+					user_id: msg.from.id,
+					user_name: msg.from.username,
+					first_name: msg.from.first_name,
+					last_name: msg.from.last_name
+				};
+				this.chats[msg.chat.id].users[msg.from.id] = NewData;
+				this.UsersInChat.findOneAndUpdate({chat_id: msg.chat.id, user_id: msg.from.id}, NewData, {upsert: true}, ()=>a = 1);
+			}
 			if (current_vote.haveTextArea(msg.chat.id)) {
 				current_vote.setAnswer(msg.chat.id, null, msg.text);
 			}

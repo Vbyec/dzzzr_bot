@@ -27,7 +27,7 @@ var VoteClass = function (telegram_class, bot_name, db_connection) {
 	this.telegram_class = telegram_class;
 	this.bot_name = bot_name;
 	this.chats = [];
-	this.name="";
+	this.name = "";
 
 	db_connection.model('Vote', VoteSchema);
 	db_connection.model('UserVote', UserVoteSchema);
@@ -48,35 +48,35 @@ VoteClass.prototype = {
 		})
 	},
 	close: function (id) {
-		return new Promise(resolve=>this.VoteDB.findByIdAndUpdate(id, {$set: {active: false}}, {new: true}, msg=>resolve()));
+		return new Promise(resolve=>this.VoteDB.findByIdAndUpdate(id, {$set: {active: false}}, {'new': true}, msg=>resolve()));
 	},
 	get: function (id) {
 		return new Promise((resolve, reject) =>this.VoteDB.findById(id).then(record=>record.active ? resolve(record) : reject("Выставление оценок уже завершено")).catch(record=>reject("Не удалось найти такой опрос")));
 	},
 	getActiveVote: function () {
-        return new Promise((resolve, reject) =>this.VoteDB.findOne({active: true}).then(record=> {
-            record ? resolve(record) : reject("Не удалось найти активного опроса")
-        }));
+		return new Promise((resolve, reject) =>this.VoteDB.findOne({active: true}).then(record=> {
+			record ? resolve(record) : reject("Не удалось найти активного опроса")
+		}));
 	},
 	start: function (chat_id, user_name, first_name, last_name, vote_id) {
 		this.chats.findIndex(el=>el.id == chat_id) > -1 && this.chats.splice(this.chats.findIndex(el=>el.id == chat_id), 1);
 		this.chats.push({id: chat_id, user_id: chat_id, user_name: user_name, first_name: first_name, last_name: last_name, current_question: 0, message_id: 0, vote_id: vote_id, field: null, hq: null});
 		this.nextQuestion(chat_id);
 	},
-    getVoteName: function (id) {
-        return new Promise(resolve=> {
-            if (!this.name) {
-                this.get(id)
-                    .then(vote=> {
-                        this.name = vote.name;
-                        resolve(this.name);
-                    })
-            }
-            else {
-                resolve(this.name);
-            }
-        })
-    },
+	getVoteName: function (id) {
+		return new Promise(resolve=> {
+			if (!this.name) {
+				this.get(id)
+					.then(vote=> {
+						this.name = vote.name;
+						resolve(this.name);
+					})
+			}
+			else {
+				resolve(this.name);
+			}
+		})
+	},
 	end: function (chat_id) {
 		let current_chat = this.findChat(chat_id);
 		let NewData = {
@@ -120,22 +120,22 @@ VoteClass.prototype = {
 	},
 	sendNewQuestion: function (chat_id) {
 		let question = this.findCurrentQuestion(chat_id);
-        this.getVoteName(this.findChat(chat_id).vote_id)
-            .then(msg=>this.telegram_class.sendMessage(chat_id, `<b>${this.name}</b>\n` + question.text, {
-                reply_markup: {inline_keyboard: question.variants},
-                parse_mode: 'HTML'
-            }).then(a=>this.findChat(chat_id).message_id = a.message_id));
+		this.getVoteName(this.findChat(chat_id).vote_id)
+			.then(msg=>this.telegram_class.sendMessage(chat_id, `<b>${this.name}</b>\n` + question.text, {
+				reply_markup: {inline_keyboard: question.variants},
+				parse_mode: 'HTML'
+			}).then(a=>this.findChat(chat_id).message_id = a.message_id));
 	},
 	updateQuestion: function (chat_id) {
 		let question = this.findCurrentQuestion(chat_id);
 		let message_id = this.findChat(chat_id).message_id;
-        this.getVoteName(this.findChat(chat_id).vote_id)
-            .then(this.telegram_class.editMessageText(`<b>${this.name}</b>\n` + question.text, {
-                chat_id: chat_id,
-                message_id: message_id,
-                reply_markup: question.variants ? {inline_keyboard: question.variants} : null,
-                parse_mode: 'HTML'
-            }));
+		this.getVoteName(this.findChat(chat_id).vote_id)
+			.then(this.telegram_class.editMessageText(`<b>${this.name}</b>\n` + question.text, {
+				chat_id: chat_id,
+				message_id: message_id,
+				reply_markup: question.variants ? {inline_keyboard: question.variants} : null,
+				parse_mode: 'HTML'
+			}));
 	},
 	haveTextArea: function (chat_id) {
 		return this.findChat(chat_id) && this.findCurrentQuestion(chat_id) && this.findCurrentQuestion(chat_id).textarea;
