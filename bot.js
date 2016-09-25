@@ -222,7 +222,7 @@ var BotClass = function (configuration_file) {
 			.then(record=> this.current_vote.close(record.id))
 			.then(message=>this.telegram_class.answer(msg, "Опрос закрыт."))
 			.catch(message=> this.telegram_class.answer(msg, message));
-	}, "Выводит информацию о текущем активном выставлении оценок");
+	}, "Закрывает текущее активное выставление оценок и делает его не активным");
 
 // Пользовательские команды, работают только в зарегистрированных чатах
 	this.addCommand(/^\/help$/, false, true, msg =>
