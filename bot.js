@@ -267,8 +267,8 @@ var BotClass = function (configuration_file) {
 				.catch(message=> this.telegram_class.answer(msg, message));
 		}
 	}, "Начинает опрос на выставление оценок");
-	//this.notifyAllAdmins("Bot started");
-	//this.currentEngine.init();
+	this.notifyAllAdmins("Bot started");
+	this.currentEngine.init();
 	logger.info("Bot started.");
 	return this;
 };
