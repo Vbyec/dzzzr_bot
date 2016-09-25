@@ -42,6 +42,7 @@ VoteClass.prototype = {
 	create: function (name) {
 		return new Promise(resolve => {
 			var Vote = new this.VoteDB();
+			this.name = name;
 			Vote.name = name;
 			Vote.active = true;
 			Vote.save().then(record=> resolve(record.id));
@@ -93,6 +94,7 @@ VoteClass.prototype = {
 		};
 		this.UserVoteDB.findOneAndUpdate({vote_id: current_chat.vote_id, user_id: current_chat.id}, NewData, {upsert: true}, ()=>a = 1);
 		let text =
+			`<b>${this.name}</b>\n\n` +
 			"<b>Спасибо за участие в выставлении оценок!\n</b>" +
 			"<pre>Вы оценили игру так:\n" +
 			(current_chat.hq != null ? `Штаб: ${current_chat.hq}\n` : "") +
@@ -121,7 +123,7 @@ VoteClass.prototype = {
 	sendNewQuestion: function (chat_id) {
 		let question = this.findCurrentQuestion(chat_id);
 		this.getVoteName(this.findChat(chat_id).vote_id)
-			.then(msg=>this.telegram_class.sendMessage(chat_id, `<b>${this.name}</b>\n` + question.text, {
+			.then(msg=>this.telegram_class.sendMessage(chat_id, `<b>${this.name}</b>\n\n` + question.text, {
 				reply_markup: {inline_keyboard: question.variants},
 				parse_mode: 'HTML'
 			}).then(a=>this.findChat(chat_id).message_id = a.message_id));
@@ -130,7 +132,7 @@ VoteClass.prototype = {
 		let question = this.findCurrentQuestion(chat_id);
 		let message_id = this.findChat(chat_id).message_id;
 		this.getVoteName(this.findChat(chat_id).vote_id)
-			.then(this.telegram_class.editMessageText(`<b>${this.name}</b>\n` + question.text, {
+			.then(this.telegram_class.editMessageText(`<b>${this.name}</b>\n\n` + question.text, {
 				chat_id: chat_id,
 				message_id: message_id,
 				reply_markup: question.variants ? {inline_keyboard: question.variants} : null,
@@ -162,7 +164,8 @@ VoteClass.prototype = {
 								author_fee: el.author_fee,
 								first_name: el.first_name,
 								last_name: el.last_name,
-								user_name: el.user_name
+								user_name: el.user_name,
+								user_id: el.user_id
 							});
 							el.comment && reviews.push({
 								comment: el.comment,

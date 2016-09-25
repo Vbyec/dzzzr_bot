@@ -12,7 +12,7 @@ var BotClass = function (configuration_file) {
 		db_connection = mongoose.createConnection('mongodb://localhost/Dzzzr_' + configuration.bot_name);
 	mongoose.Promise = global.Promise;
 	this.telegram_class = new TelegramBot(configuration.token, {polling: true});
-	var current_vote = new Vote(this.telegram_class, configuration.bot_name, db_connection);
+	this.current_vote = new Vote(this.telegram_class, configuration.bot_name, db_connection);
 	log4js.loadAppender('file');
 	log4js.addAppender(log4js.appenders.file(configuration.log_path + "/" + configuration.bot_name + ".log"), configuration.bot_name);
 	var logger = new log4js.getLogger(configuration.bot_name);
@@ -28,11 +28,15 @@ var BotClass = function (configuration_file) {
 		chat_id: Number,
 		user_name: String,
 		first_name: String,
-		last_name: String
+		last_name: String,
+		voted: false
 	});
 	db_connection.model('UsersInChat', UsersInChatSchema);
-	this.UsersInChat = db_connection.model('UsersInChat');
+	this.UsersInChatDB = db_connection.model('UsersInChat');
 
+	this.getUsersInChat = function (chat_id) {
+		return new Promise(resolve=>this.UsersInChatDB.find({chat_id: chat_id}).then(resolve));
+	};
 
 	// Расширяем функционал телеграмм класса
 	this.telegram_class.reply = (msg, text)=> {
@@ -91,7 +95,7 @@ var BotClass = function (configuration_file) {
 	this.telegram_class.on('message', (msg)=> {
 		try {
 			if (!this.chats.hasOwnProperty(msg.chat.id)) {
-				this.chats[msg.chat.id] = {users:{} };
+				this.chats[msg.chat.id] = {users: {}};
 			}
 			if (!this.chats[msg.chat.id].users.hasOwnProperty(msg.from.id)) {
 				let NewData = {
@@ -101,10 +105,10 @@ var BotClass = function (configuration_file) {
 					last_name: msg.from.last_name
 				};
 				this.chats[msg.chat.id].users[msg.from.id] = NewData;
-				this.UsersInChat.findOneAndUpdate({chat_id: msg.chat.id, user_id: msg.from.id}, NewData, {upsert: true}, ()=>a = 1);
+				this.UsersInChatDB.findOneAndUpdate({chat_id: msg.chat.id, user_id: msg.from.id}, NewData, {upsert: true}, ()=>a = 1);
 			}
-			if (current_vote.haveTextArea(msg.chat.id)) {
-				current_vote.setAnswer(msg.chat.id, null, msg.text);
+			if (this.current_vote.haveTextArea(msg.chat.id)) {
+				this.current_vote.setAnswer(msg.chat.id, null, msg.text);
 			}
 			var command = this.commands.find(command=>msg.text && command.regexp.exec(msg.text.trim().toLowerCase().replace('@' + this.name, '')));
 			if (command === undefined) return true;
@@ -123,9 +127,9 @@ var BotClass = function (configuration_file) {
 			let start_command = msg.text.match(/\/start\s(.*)/)[1].trim();
 			switch (start_command) {
 				case 'vote':
-					current_vote
+					this.current_vote
 						.getActiveVote()
-						.then(vote=>current_vote.start(msg.chat.id, msg.chat.username, msg.chat.first_name, msg.chat.last_name, vote.id))
+						.then(vote=>this.current_vote.start(msg.chat.id, msg.chat.username, msg.chat.first_name, msg.chat.last_name, vote.id))
 						.catch(message=> this.telegram_class.answer(msg, message));
 					break;
 				default :
@@ -134,7 +138,7 @@ var BotClass = function (configuration_file) {
 		}
 	);
 
-	this.telegram_class.on('callback_query', msg=> current_vote.setAnswer(msg.from.id, msg.id, msg.data, msg.message.message_id));
+	this.telegram_class.on('callback_query', msg=> this.current_vote.setAnswer(msg.from.id, msg.id, msg.data, msg.message.message_id));
 
 // Добавляем все необходимые команды
 // Админские команды, работают даже в незарегистрированных чатах.
@@ -179,21 +183,43 @@ var BotClass = function (configuration_file) {
 	this.addCommand(/^\/vote_create/, true, false, msg => {
 		let vote_name = msg.text.match(/^\/vote_create\s(.*)/)[1].trim();
 		assertNotEmpty(vote_name, "Не указано название игры.");
-		current_vote.create(vote_name).then(id=>this.telegram_class.answer(msg,
+		this.current_vote.create(vote_name).then(id=>this.telegram_class.answer(msg,
 				`Начинаем голосование команды за игру ${vote_name}.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true})
 		);
 	}, "Создает опрос для простановки оценок за игру.");
 
+	this.addCommand(/^\/vote_get_unpolled$/, true, false, msg => {
+		let users_in_chat = {};
+		this.getUsersInChat(msg.chat.id)
+			.then(a=> {
+				users_in_chat = a;
+				return this.current_vote.getActiveVote();
+			})
+			.then(vote=>this.current_vote.getStat(vote.id))
+			.then(vote_stat=> {
+				users_in_chat.map(user=>user.voted = vote_stat.list.findIndex(voted=>voted.user_id == user.user_id) > -1);
+				if (users_in_chat.filter(el=>!el.voted).length) {
+					this.telegram_class.answer(msg,
+						"Список тех, кого бот видел в этом чате и кто еще не проставил оценку:\n"
+						+ users_in_chat.filter(el=>!el.voted).map(el=>"@" + el.user_name).join(", ")
+						+ `\n\nОценки можно проставить перейдя по ссылке https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true}
+					)
+				}else{
+					this.telegram_class.answer(msg,"Все кого видел в этом чате уже проголосовали");
+				}
+			});
+	}, "Выводит список пользователей которые были в этом чате, но еще не проставили оценку за игру");
+
 	this.addCommand(/^\/vote_stats$/, true, false, msg => {
-		current_vote.getActiveVote()
-			.then(record=> current_vote.getStatMessages(record.id))
+		this.current_vote.getActiveVote()
+			.then(record=> this.current_vote.getStatMessages(record.id))
 			.then(messages=>messages.forEach(message=>this.telegram_class.answer(msg, message, {parse_mode: 'HTML'})))
 			.catch(message=> this.telegram_class.answer(msg, message));
 	}, "Выводит информацию о текущем активном выставлении оценок");
 
 	this.addCommand(/^\/vote_close$/, true, false, msg => {
-		current_vote.getActiveVote()
-			.then(record=> current_vote.close(record.id))
+		this.current_vote.getActiveVote()
+			.then(record=> this.current_vote.close(record.id))
 			.then(message=>this.telegram_class.answer(msg, "Опрос закрыт."))
 			.catch(message=> this.telegram_class.answer(msg, message));
 	}, "Выводит информацию о текущем активном выставлении оценок");
@@ -235,14 +261,14 @@ var BotClass = function (configuration_file) {
 	}, "Выводит список оставшихся кодов.");
 	this.addCommand(/^\/vote_start/, false, false, msg => {
 		if (msg.chat.type == 'private') {
-			current_vote
+			this.current_vote
 				.getActiveVote()
-				.then(vote=>current_vote.start(msg.chat.id, msg.chat.username, msg.chat.first_name, msg.chat.last_name, vote.id))
+				.then(vote=>this.current_vote.start(msg.chat.id, msg.chat.username, msg.chat.first_name, msg.chat.last_name, vote.id))
 				.catch(message=> this.telegram_class.answer(msg, message));
 		}
 	}, "Начинает опрос на выставление оценок");
-	this.notifyAllAdmins("Bot started");
-	this.currentEngine.init();
+	//this.notifyAllAdmins("Bot started");
+	//this.currentEngine.init();
 	logger.info("Bot started.");
 	return this;
 };
