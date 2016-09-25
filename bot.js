@@ -181,6 +181,7 @@ var BotClass = function (configuration_file) {
 	}, "Запрещает вбивать коды.");
 
 	this.addCommand(/^\/vote_create/, true, false, msg => {
+		assertNotEmpty(msg.text.match(/^\/vote_create\s/), "Не указано название игры.");
 		let vote_name = msg.text.match(/^\/vote_create\s(.*)/)[1].trim();
 		assertNotEmpty(vote_name, "Не указано название игры.");
 		this.current_vote.create(vote_name).then(id=>this.telegram_class.answer(msg,
@@ -267,8 +268,8 @@ var BotClass = function (configuration_file) {
 				.catch(message=> this.telegram_class.answer(msg, message));
 		}
 	}, "Начинает опрос на выставление оценок");
-	this.notifyAllAdmins("Bot started");
-	this.currentEngine.init();
+	//this.notifyAllAdmins("Bot started");
+	//this.currentEngine.init();
 	logger.info("Bot started.");
 	return this;
 };
