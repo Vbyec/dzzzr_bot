@@ -16,9 +16,9 @@ var UserVoteSchema = new Schema({
 	user_name: String,
 	first_name: String,
 	last_name: String,
-	hq: {type: String, 'default': null},
-	field: {type: String, 'default': null},
-	author_fee: Number,
+	hq: {type: Number, 'default': null},
+	field: {type: Number, 'default': null},
+	author_fee: {type: Number, 'default': null},
 	comment: String
 });
 
@@ -61,7 +61,19 @@ VoteClass.prototype = {
 	},
 	start: function (chat_id, user_name, first_name, last_name, vote_id) {
 		this.chats.findIndex(el=>el.id == chat_id) > -1 && this.chats.splice(this.chats.findIndex(el=>el.id == chat_id), 1);
-		this.chats.push({id: chat_id, user_id: chat_id, user_name: user_name, first_name: first_name, last_name: last_name, current_question: 0, message_id: 0, vote_id: vote_id, field: null, hq: null});
+		this.chats.push({
+			id: chat_id,
+			user_id: chat_id,
+			user_name: user_name,
+			first_name: first_name,
+			last_name: last_name,
+			current_question: 0,
+			message_id: 0,
+			vote_id: vote_id,
+			field: null,
+			hq: null,
+			author_fee: null
+		});
 		this.nextQuestion(chat_id);
 	},
 	getVoteName: function (id) {
@@ -159,8 +171,8 @@ VoteClass.prototype = {
 				this.UserVoteDB.find({vote_id: vote_id}).then(a=> {
 					a.forEach(el=> {
 							list.push({
-								hq: el.hq == null ? '--' : el.hq,
-								field: el.field == null ? '--' : el.field,
+								hq: el.hq,
+								field: el.field,
 								author_fee: el.author_fee,
 								first_name: el.first_name,
 								last_name: el.last_name,
@@ -196,15 +208,16 @@ VoteClass.prototype = {
 				let list_message = "<b>Список</b>\n<pre># штаб поле авторам\n";
 				stat.list.forEach((el, index)=> {
 					let number = index + 1;
-					let hq = el.hq == null ? "-" : el.hq;
-					let field = el.field == null ? "-" : el.field;
+					let hq = el.hq == null ? "--" : el.hq;
+					let field = el.field == null ? "--" : el.field;
+					let author_fee = el.author_fee == null ? "--" : el.author_fee;
 					let first_name = el.first_name == null ? "" : el.first_name;
 					let last_name = el.last_name == null ? "" : " " + el.last_name;
 					let user_name = el.user_name == null ? "" : ` (@${el.user_name})`;
 					list_message += number + " ".repeat(2 - number.toString().length + 1);
 					list_message += hq + " ".repeat(2 - hq.toString().length + 3);
 					list_message += field + " ".repeat(2 - field.toString().length + 4);
-					list_message += el.author_fee + " ".repeat(3 - el.author_fee.toString().length + 3);
+					list_message += author_fee + " ".repeat(3 - author_fee.toString().length + 3);
 					list_message += "— ";
 					list_message += `${first_name}${last_name}${user_name}`;
 					list_message += '\n';

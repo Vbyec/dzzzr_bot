@@ -43,7 +43,7 @@ var DzzzrVoteQuestion = function (vote_object) {
 					let hq = parseInt(data);
 					if (data >= 0 && data <= 40) {
 						this.vote_object.findChat(chat_id).hq = hq;
-						this.vote_object.findChat(chat_id).current_question = 5;
+						this.vote_object.findChat(chat_id).current_question = 6;
 						resolve();
 					} else {
 						this.vote_object.sendAnswer(chat_id, query_id, "Оценка должна быть от 0 до 40.");
