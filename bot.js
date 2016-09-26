@@ -185,9 +185,9 @@ var BotClass = function (configuration_file) {
 		let vote_name = msg.text.match(/^\/vote_create\s(.*)/)[1].trim();
 		assertNotEmpty(vote_name, "Не указано название игры.");
 		this.current_vote.getActiveVote()
-			.then(vote=>this.telegram_class.answer(msg,`Перед созданием нового опроса, закройте старый ${vote.name} командой /vote_close`))
+			.then(vote=>this.telegram_class.answer(msg, `Перед созданием нового опроса, закройте старый ${vote.name} командой /vote_close`))
 			.catch(vote=>this.current_vote.create(vote_name)
-				.then(id=>this.telegram_class.answer(msg,`Начинаем голосование команды за игру ${vote_name}.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true})
+				.then(id=>this.telegram_class.answer(msg, `Начинаем голосование команды за игру ${vote_name}.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true})
 			));
 	}, "Создает опрос для простановки оценок за игру.");
 
@@ -216,7 +216,7 @@ var BotClass = function (configuration_file) {
 	this.addCommand(/^\/vote_stats$/, true, false, msg => {
 		this.current_vote.getActiveVote()
 			.then(record=> this.current_vote.getStatMessages(record.id))
-			.then(messages=>messages.forEach(message=>this.telegram_class.answer(msg, message, {parse_mode: 'HTML'})))
+			.then(messages=>messages.forEach((message, index)=> setTimeout(this.telegram_class.answer.bind(null, msg, message, {parse_mode: 'HTML'}), 500 * index)))
 			.catch(message=> this.telegram_class.answer(msg, message));
 	}, "Выводит информацию о текущем активном выставлении оценок");
 
