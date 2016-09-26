@@ -184,9 +184,11 @@ var BotClass = function (configuration_file) {
 		assertNotEmpty(msg.text.match(/^\/vote_create\s/), "Не указано название игры.");
 		let vote_name = msg.text.match(/^\/vote_create\s(.*)/)[1].trim();
 		assertNotEmpty(vote_name, "Не указано название игры.");
-		this.current_vote.create(vote_name).then(id=>this.telegram_class.answer(msg,
-				`Начинаем голосование команды за игру ${vote_name}.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true})
-		);
+		this.current_vote.getActiveVote()
+			.then(vote=>this.telegram_class.answer(msg,`Перед созданием нового опроса, закройте старый ${vote.name} командой /vote_close`))
+			.catch(vote=>this.current_vote.create(vote_name)
+				.then(id=>this.telegram_class.answer(msg,`Начинаем голосование команды за игру ${vote_name}.\r\nДля начала голосвания кликните по ссылке: https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true})
+			));
 	}, "Создает опрос для простановки оценок за игру.");
 
 	this.addCommand(/^\/vote_get_unpolled$/, true, false, msg => {
@@ -205,8 +207,8 @@ var BotClass = function (configuration_file) {
 						+ users_in_chat.filter(el=>!el.voted).map(el=>"@" + el.user_name).join(", ")
 						+ `\n\nОценки можно проставить перейдя по ссылке https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true}
 					)
-				}else{
-					this.telegram_class.answer(msg,"Все кого видел в этом чате уже проголосовали");
+				} else {
+					this.telegram_class.answer(msg, "Все кого видел в этом чате уже проголосовали");
 				}
 			});
 	}, "Выводит список пользователей которые были в этом чате, но еще не проставили оценку за игру");
