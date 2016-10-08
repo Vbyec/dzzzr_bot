@@ -39,8 +39,9 @@ var BotClass = function (configuration_file) {
 	};
 
 	// Расширяем функционал телеграмм класса
-	this.telegram_class.reply = (msg, text)=> {
-		this.telegram_class.sendMessage(msg.chat.id, text, {reply_to_message_id: msg.message_id});
+	this.telegram_class.reply = (msg, text,option={})=> {
+		option.reply_to_message_id= msg.message_id;
+		this.telegram_class.sendMessage(msg.chat.id, text, option);
 	};
 	this.telegram_class.answer = (msg, text, option) => {
 		this.telegram_class.sendMessage(msg.chat.id, text, option);

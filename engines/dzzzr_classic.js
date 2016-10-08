@@ -32,14 +32,14 @@ var ClassicEngine = function (configuration, bot) {
 		4: "Не введен код",
 		5: "Время на отправку кода вышло. Решайте следующее задание",
 		6: "",
-		7: "Уже был введен",
-		8: "Код принят",
-		9: "Код принят. Выполняйте следующее задание.",
+		7: "❌ <i>Уже был введен</i>",
+		8: "✅ <i>Код принят</i>",
+		9: "✅ <i>Код принят. Выполняйте следующее задание.</i>",
 		10: "Спасибо за игру. Игра закончена",
-		11: "Код не принят",
+		11: "❌ <i>Код не принят</i>",
 		12: "Вы вводили неверный код больше 4 раз. Прием данных от Вас заблокирован на три минуты. Повторите попытку позже",
 		15: "Вам не запланировано следующее задание.",
-		16: "Код принят",
+		16: "✅ <i>Код принят</i>",
 		17: "Время на отправку кода вышло"
 	};
 	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^!\..*)/i;
@@ -52,7 +52,7 @@ var ClassicEngine = function (configuration, bot) {
 			var code = msg.text.match(this.code_regex)[0].toLowerCase().replace('д', 'd').replace('р', 'r');
 			if (this.bot.allow_code && code.length > 2) {
 				this.sendCode(code, (response) => {
-					this.bot.telegram_class.reply(msg, response.text);
+					this.bot.telegram_class.reply(msg, response.text, {parse_mode: 'HTML'});
 					if (response.done) {
 						this.getPage()
 							.then(page=> {
