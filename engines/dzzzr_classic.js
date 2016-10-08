@@ -9,9 +9,10 @@ var ClassicEngine = function (configuration, bot) {
 	this.bot = bot;
 	this.city = configuration.classic.city || 'moscow';
 	this.watcher = {};
+	this.cookie={};
 	this.setRequest = function () {
 		this.request = require('request').defaults({
-			jar: true,
+		//	jar: true,
 			followAllRedirects: true,
 			headers: {
 				Referer: "http://classic.dzzzr.ru/",
@@ -21,6 +22,7 @@ var ClassicEngine = function (configuration, bot) {
 				pass: configuration.classic.pin
 			}
 		});
+		this.cookie=this.request.jar()
 		return this;
 	};
 	this.response_codes = {
@@ -142,7 +144,8 @@ var ClassicEngine = function (configuration, bot) {
 		return new Promise((resolve, reject)=> {
 			this.request.get(
 				{
-					url: "http://classic.dzzzr.ru/" + this.city + "/"
+					url: "http://classic.dzzzr.ru/" + this.city + "/",
+					jar:this.cookie
 				}, (error, response, body) => {
 					if (response.statusCode == 200) {
 						resolve(' no CloudFlare');
@@ -174,7 +177,8 @@ var ClassicEngine = function (configuration, bot) {
 					setTimeout(() => {
 						this.request.get(
 							{
-								url: buildUrl("http://classic.dzzzr.ru/cdn-cgi/l/chk_jschl", form)
+								url: buildUrl("http://classic.dzzzr.ru/cdn-cgi/l/chk_jschl", form),
+								jar:this.cookie
 							}, (error, response) => {
 								response.statusCode == 200 ? resolve(response.statusMessage) : reject(response.statusMessage);
 							});
@@ -190,6 +194,7 @@ var ClassicEngine = function (configuration, bot) {
 				{
 					url: "http://classic.dzzzr.ru/" + this.city + "/",
 					encoding: 'binary',
+					jar:this.cookie,
 					form: {
 						action: "auth",
 						login: configuration.classic.login,
@@ -211,6 +216,7 @@ var ClassicEngine = function (configuration, bot) {
 			{
 				uri: "http://classic.dzzzr.ru/" + this.city + "/go/",
 				encoding: 'binary',
+				jar:this.cookie,
 				form: {
 					cod: code,
 					action: "entcod"
@@ -281,8 +287,9 @@ var ClassicEngine = function (configuration, bot) {
 		return new Promise((resolve, reject) => {
 			this.request.get({
 				url: "http://classic.dzzzr.ru/" + this.city + "/go",
-				encoding: 'binary'
-			}, function (error, response, body) {
+				encoding: 'binary',
+				jar:this.cookie
+			},  (error, response, body) =>{
 				if (response.statusCode == 401) reject('Game auth: false');
 				body = iconv.decode(body, 'win1251');
 				if (match = body.match(/начнется (.+).<br>Ждем вас к началу игры/))reject('Игра еще не началась. Старт ' + match[1]);
