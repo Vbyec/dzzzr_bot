@@ -51,15 +51,6 @@ var BotClass = function (configuration_file) {
 	};
 	this.telegram_class.send_location = (msg, latitude, longitude, title) => this.telegram_class.sendVenue(msg.chat.id, latitude, longitude, title);
 
-	this.telegram_class.sendVenue = function (chatId, latitude, longitude, title, address, form = {}) {
-		form.chat_id = chatId;
-		form.latitude = latitude;
-		form.longitude = longitude;
-		form.title = title;
-		form.address = address;
-		return this._request('sendVenue', {form});
-	};
-
 	// Добавляем методы в класс бота
 	this.addCommand = function (regexp, need_admin, need_registered, callback, description = "") {
 		this.commands.push(new Command(regexp, need_admin, need_registered, callback, this, description));
