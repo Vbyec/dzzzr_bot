@@ -30,6 +30,7 @@ var LightEngine = function (configuration, bot) {
 		this.bot.addCommand(/^\/set_pin/, true, false, msg => {
 			assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пин.");
 			configuration.light.pin = msg.text.match(/.*\s(.*)/)[1].trim();
+			configuration.save();
 			this.bot.telegram_class.reply(msg, "Новый пин:" + configuration.light.pin);
 		}, "Устанавливает пин на текущую игру.");
 		this.bot.addCommand(/^\/get_url/, false, true, msg => {

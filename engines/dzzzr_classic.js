@@ -22,7 +22,7 @@ var ClassicEngine = function (configuration, bot) {
 				pass: configuration.classic.pin
 			}
 		});
-		this.cookie=this.request.jar()
+		this.cookie=this.request.jar();
 		return this;
 	};
 	this.response_codes = {
@@ -96,6 +96,7 @@ var ClassicEngine = function (configuration, bot) {
 		this.bot.addCommand(/^\/set_pin/, true, false, msg => {
 			assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пин.");
 			configuration.classic.pin = msg.text.match(/.*\s(.*)/)[1].trim();
+			configuration.save();
 			this.authorize()
 				.then(auth=> this.getPage())
 				.then(message=> this.bot.telegram_class.answer(msg, "Game auth: true"))

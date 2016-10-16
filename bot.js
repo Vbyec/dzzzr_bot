@@ -1,8 +1,8 @@
-var BotClass = function (configuration_file) {
+var BotClass = function (configuration) {
+	this.configuration = configuration;
 // Подгружаем необходимые require
 	require('./functions');
 	var fs = require('fs'),
-		configuration = JSON.parse(fs.readFileSync(configuration_file)),
 		log4js = require('log4js'),
 		mongoose = require('mongoose'),
 		TelegramBot = require('node-telegram-bot-api'),
@@ -57,27 +57,29 @@ var BotClass = function (configuration_file) {
 	};
 
 	this.removeAdmin = function (user) {
-		this.admin_user.indexOf(user) > -1 && this.admin_user.splice(this.admin_user.indexOf(user), 1);
+		this.configuration.admin_user.indexOf(user) > -1 && this.configuration.admin_user.splice(this.configuration.admin_user.indexOf(user), 1);
+		this.configuration.save();
 	};
 	this.addAdmin = function (user) {
-		this.admin_user.push(user);
-		this.admin_user = this.admin_user.unique();
+		this.configuration.admin_user.push(user);
+		this.configuration.admin_user = this.configuration.admin_user.unique();
+		this.configuration.save();
 	};
 
 	this.addRegisteredChat = function (chat_id) {
-		this.registered_chat_ids.push(chat_id);
-		this.registered_chat_ids = this.registered_chat_ids.unique();
+		this.configuration.registered_chat_ids.push(chat_id);
+		this.configuration.registered_chat_ids = this.configuration.registered_chat_ids.unique();
+		this.configuration.save();
 	};
 
-	this.notifyAllAdmins = msg=>this.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, msg));
-	this.notifyErrorAllAdmins = msg=>this.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, '❗️❗️❗️<b>' + msg + '</b>❗️❗️❗️', {parse_mode: 'HTML'}));
+	// @todo Переписать эти методы на использование списка админов
+	this.notifyAllAdmins = msg=>this.configuration.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, msg));
+	this.notifyErrorAllAdmins = msg=>this.configuration.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, '❗️❗️❗️<b>' + msg + '</b>❗️❗️❗️', {parse_mode: 'HTML'}));
 
 	// Задаем стартовые значения переменным бота
-	this.admin_user = configuration.admin_user;
 	this.commands = [];
 	this.name = configuration.bot_name;
 	this.allow_code = 0;
-	this.registered_chat_ids = configuration.registered_chat_ids;
 	this.location_regex = /\d{2}\.\d{4,8}.{1,3}\d{2}\.\d{4,8}/i;
 
 	fs.accessSync('./engines/' + configuration.engine + ".js", fs.F_OK);
@@ -144,7 +146,7 @@ var BotClass = function (configuration_file) {
 		this.addRegisteredChat(msg.chat.id);
 		this.telegram_class.reply(msg, "Чат зарегистрирован.");
 	}, "Регистрирует текущий чат как разрешенный.");
-	this.addCommand(/^\/admin_user_list$/, true, false, msg => this.telegram_class.answer(msg, this.admin_user.map(el=>"@" + el).join("\n")), "Показывает список админов бота.");
+	this.addCommand(/^\/admin_user_list$/, true, false, msg => this.telegram_class.answer(msg, this.configuration.admin_user.map(el=>"@" + el).join("\n")), "Показывает список админов бота.");
 
 	this.addCommand(/^\/admin_user_add/, true, false, msg => {
 		assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пользователь.");
