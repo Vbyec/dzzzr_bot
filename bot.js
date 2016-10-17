@@ -7,12 +7,13 @@ var BotClass = function (configuration) {
 		mongoose = require('mongoose'),
 		TelegramBot = require('node-telegram-bot-api'),
 		Command = require('./command'),
-		Schema = mongoose.Schema,
 		Vote = require('./vote'),
+		UsersInChatClass = require('./usersInChat'),
 		db_connection = mongoose.createConnection('mongodb://localhost/Dzzzr_' + configuration.bot_name);
 	mongoose.Promise = global.Promise;
 	this.telegram_class = new TelegramBot(configuration.token, {polling: true});
 	this.current_vote = new Vote(this.telegram_class, configuration.bot_name, db_connection);
+	this.usersInChat = new UsersInChatClass(db_connection);
 	log4js.loadAppender('file');
 	log4js.addAppender(log4js.appenders.file(configuration.log_path + "/" + configuration.bot_name + ".log"), configuration.bot_name);
 	var logger = new log4js.getLogger(configuration.bot_name);
@@ -22,21 +23,6 @@ var BotClass = function (configuration) {
 	process.on('uncaughtException', function (err) {
 		logger.fatal('Caught exception: ' + err + '\n' + err.stack);
 	});
-
-	var UsersInChatSchema = new Schema({
-		user_id: Number,
-		chat_id: Number,
-		user_name: String,
-		first_name: String,
-		last_name: String,
-		voted: false
-	});
-	db_connection.model('UsersInChat', UsersInChatSchema);
-	this.UsersInChatDB = db_connection.model('UsersInChat');
-
-	this.getUsersInChat = function (chat_id) {
-		return new Promise(resolve=>this.UsersInChatDB.find({chat_id: chat_id}).then(resolve));
-	};
 
 	// Расширяем функционал телеграмм класса
 	this.telegram_class.reply = (msg, text,option={})=> {
@@ -99,7 +85,7 @@ var BotClass = function (configuration) {
 					last_name: msg.from.last_name
 				};
 				this.chats[msg.chat.id].users[msg.from.id] = NewData;
-				this.UsersInChatDB.findOneAndUpdate({chat_id: msg.chat.id, user_id: msg.from.id}, NewData, {upsert: true}, ()=>a = 1);
+				this.usersInChat.save(NewData,msg.chat.id,msg.from.id)
 			}
 			if (this.current_vote.haveTextArea(msg.chat.id)) {
 				this.current_vote.setAnswer(msg.chat.id, null, msg.text);
@@ -185,27 +171,21 @@ var BotClass = function (configuration) {
 			));
 	}, "Создает опрос для простановки оценок за игру.");
 
-	this.addCommand(/^\/vote_get_unpolled$/, true, false, msg => {
-		let users_in_chat = {};
-		this.getUsersInChat(msg.chat.id)
-			.then(a=> {
-				users_in_chat = a;
-				return this.current_vote.getActiveVote();
-			})
-			.then(vote=>this.current_vote.getStat(vote.id))
-			.then(vote_stat=> {
-				users_in_chat.map(user=>user.voted = vote_stat.list.findIndex(voted=>voted.user_id == user.user_id) > -1);
-				if (users_in_chat.filter(el=>!el.voted).length) {
-					this.telegram_class.answer(msg,
-						"Список тех, кого бот видел в этом чате и кто еще не проставил оценку:\n"
-						+ users_in_chat.filter(el=>!el.voted).map(el=>"@" + el.user_name).join(", ")
-						+ `\n\nОценки можно проставить перейдя по ссылке https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true}
-					)
-				} else {
-					this.telegram_class.answer(msg, "Все кого видел в этом чате уже проголосовали");
-				}
-			});
-	}, "Выводит список пользователей которые были в этом чате, но еще не проставили оценку за игру");
+    this.addCommand(/^\/vote_get_unpolled$/, true, false, msg => {
+        this.current_vote
+            .getUnvotedUsers(msg.chat.id)
+            .then(users => {
+                if (users.length) {
+                    this.telegram_class.answer(msg,
+                        "Список тех, кого бот видел в этом чате и кто еще не проставил оценку:\n"
+                        + users.join(", ")
+                        + `\n\nОценки можно проставить перейдя по ссылке https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true}
+                    )
+                } else {
+                    this.telegram_class.answer(msg, "Все кого видел в этом чате уже проголосовали");
+                }
+            });
+    }, "Выводит список пользователей которые были в этом чате, но еще не проставили оценку за игру");
 
 	this.addCommand(/^\/vote_stats$/, true, false, msg => {
 		this.current_vote.getActiveVote()
