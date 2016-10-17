@@ -178,7 +178,7 @@ VoteClass.prototype = {
                 })
                 .then(id=> this.getStat(id))
                 .then(function (vote_stats) {
-                    let result =users_in_chat.filter(user=>vote_stats.list.findIndex(voted_user=>voted_user.user_id==user.user_id)==-1).map(user=>user.user_name?"@"+user.user_name:user.first_name);
+                    let result =users_in_chat.filter(user=>vote_stats.list.findIndex(voted_user=>voted_user.user_id==user.user_id)==-1).map(user=>user.user_name?"@"+user.user_name:`${user.first_name} ${user.last_name}`);
                     resolve(result);
                 })
         });
@@ -197,7 +197,7 @@ VoteClass.prototype = {
         };
         let reviews = [];
         return new Promise(resolve=> {
-                this.UserVoteDB.find({vote_id: vote_id}).then(a=> {
+                this.UserVoteDB.find({vote_id: vote_id.toObjectId()}).then(a=> {
                     a.forEach(el=> {
                             list.push({
                                 hq: el.hq,
