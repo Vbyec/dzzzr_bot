@@ -93,10 +93,9 @@ var LightEngine = function (configuration, bot) {
 		request.post(
 			{
 				uri: "http://lite.dzzzr.ru/" + this.city + "/go/?pin=" + configuration.light.pin,
-				encoding: 'binary',
 				followRedirect: true,
 				form: {
-					cod: code,
+					cod: code.toWin1251(),
 					action: "entcod",
 					pin: configuration.light.pin
 				}

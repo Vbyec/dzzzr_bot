@@ -45,9 +45,8 @@ var ClassicEngine = function (configuration,bot) {
 			request.post(
 				{
 					uri: "http://mera.dozormsk.com/232p/index.php",
-					encoding: 'binary',
 					form: {
-						code: code,
+						code: code.toWin1251(),
 						level: ClassicEngine.level
 					}
 				}, function (error, response, body) {
