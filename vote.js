@@ -169,7 +169,7 @@ VoteClass.prototype = {
         return this.findChat(chat_id) && this.findCurrentQuestion(chat_id) && this.findCurrentQuestion(chat_id).textarea;
     },
     getUnvotedUsers: function (chat_id) {
-        return new Promise(resolve=> {
+        return new Promise((resolve,reject)=> {
             let users_in_chat = [];
             this.usersInChat.getUsersInChat(chat_id)
                 .then(a=> {
@@ -180,7 +180,7 @@ VoteClass.prototype = {
                 .then(function (vote_stats) {
                     let result =users_in_chat.filter(user=>vote_stats.list.findIndex(voted_user=>voted_user.user_id==user.user_id)==-1).map(user=>user.user_name?"@"+user.user_name:`${user.first_name} ${user.last_name}`);
                     resolve(result);
-                })
+                }).catch(reject)
         });
     },
     getStat: function (vote_id) {

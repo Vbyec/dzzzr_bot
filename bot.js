@@ -25,8 +25,8 @@ var BotClass = function (configuration) {
 	});
 
 	// Расширяем функционал телеграмм класса
-	this.telegram_class.reply = (msg, text,option={})=> {
-		option.reply_to_message_id= msg.message_id;
+	this.telegram_class.reply = (msg, text, option = {})=> {
+		option.reply_to_message_id = msg.message_id;
 		this.telegram_class.sendMessage(msg.chat.id, text, option);
 	};
 	this.telegram_class.answer = (msg, text, option) => {
@@ -85,7 +85,7 @@ var BotClass = function (configuration) {
 					last_name: msg.from.last_name
 				};
 				this.chats[msg.chat.id].users[msg.from.id] = NewData;
-				this.usersInChat.save(NewData,msg.chat.id,msg.from.id)
+				this.usersInChat.save(NewData, msg.chat.id, msg.from.id)
 			}
 			if (this.current_vote.haveTextArea(msg.chat.id)) {
 				this.current_vote.setAnswer(msg.chat.id, null, msg.text);
@@ -171,21 +171,22 @@ var BotClass = function (configuration) {
 			));
 	}, "Создает опрос для простановки оценок за игру.");
 
-    this.addCommand(/^\/vote_get_unpolled$/, true, false, msg => {
-        this.current_vote
-            .getUnvotedUsers(msg.chat.id)
-            .then(users => {
-                if (users.length) {
-                    this.telegram_class.answer(msg,
-                        "Список тех, кого бот видел в этом чате и кто еще не проставил оценку:\n"
-                        + users.join(", ")
-                        + `\n\nОценки можно проставить перейдя по ссылке https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true}
-                    )
-                } else {
-                    this.telegram_class.answer(msg, "Все кого видел в этом чате уже проголосовали");
-                }
-            });
-    }, "Выводит список пользователей которые были в этом чате, но еще не проставили оценку за игру");
+	this.addCommand(/^\/vote_get_unpolled$/, true, false, msg => {
+		this.current_vote
+			.getUnvotedUsers(msg.chat.id)
+			.then(users => {
+				if (users.length) {
+					this.telegram_class.answer(msg,
+						"Список тех, кого бот видел в этом чате и кто еще не проставил оценку:\n"
+						+ users.join(", ")
+						+ `\n\nОценки можно проставить перейдя по ссылке https://telegram.me/${this.name}?start=vote`, {disable_web_page_preview: true}
+					)
+				} else {
+					this.telegram_class.answer(msg, "Все кого видел в этом чате уже проголосовали");
+				}
+			})
+			.catch(err=>this.telegram_class.answer(msg, err));
+	}, "Выводит список пользователей которые были в этом чате, но еще не проставили оценку за игру");
 
 	this.addCommand(/^\/vote_stats$/, true, false, msg => {
 		this.current_vote.getActiveVote()
