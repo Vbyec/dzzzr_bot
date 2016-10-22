@@ -33,3 +33,13 @@ String.prototype.toWin1251= function () {
 	}
 	return L.join('')
 };
+
+String.prototype.hexEncode = function () {
+	let hex, i;
+	let result = "";
+	for (i = 0; i < this.length; i++) {
+		hex = this.charCodeAt(i).toString(16);
+		result += "&#x" + ("000" + hex).slice(-4)+";";
+	}
+	return result
+};
