@@ -218,7 +218,7 @@ var ClassicEngine = function (configuration, bot) {
 				uri: "http://classic.dzzzr.ru/" + this.city + "/go/",
 				jar:this.cookie,
 				form: {
-					cod: code.hexEncode(),
+					cod: code,
 					action: "entcod"
 				}
 			}, function (error, response, body) {
