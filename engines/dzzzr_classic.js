@@ -12,7 +12,6 @@ var ClassicEngine = function (configuration, bot) {
 	this.cookie={};
 	this.setRequest = function () {
 		this.request = require('request').defaults({
-		//	jar: true,
 			followAllRedirects: true,
 			headers: {
 				Referer: "http://classic.dzzzr.ru/",
@@ -42,7 +41,7 @@ var ClassicEngine = function (configuration, bot) {
 		16: "✅ <i>Код принят</i>",
 		17: "Время на отправку кода вышло"
 	};
-	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^!\..*)/i;
+	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^\..*)/i;
 	this.name = 'classic';
 	this.level = 0;
 	this.authorised = 0;
@@ -217,8 +216,8 @@ var ClassicEngine = function (configuration, bot) {
 			{
 				uri: "http://classic.dzzzr.ru/" + this.city + "/go/",
 				jar:this.cookie,
-				form: {
-					cod: code,
+				formData: {
+					cod: iconv.encode(code, 'cp1251'),
 					action: "entcod"
 				}
 			}, function (error, response, body) {

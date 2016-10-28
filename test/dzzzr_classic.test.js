@@ -38,36 +38,26 @@ describe('Dozor classic', function () {
 				.login()
 				.then(function () {
 					let random = Math.random().toFixed(2);
-					//let string_to_write = `Алисов Дмитрий Андреевич ${random}`;
-					let string_to_write = 'Т';
-					console.log(iconv.encode('Те', 'cp1250'));
-					console.log(Buffer.from(string_to_write));
-					console.log(Buffer.from('\u00c3'));
-					console.log(new Buffer([0xc3]));
+					let string_to_write = `Алисов Дмитрий Андреевич ${random}`;
 					Engine.request.post(
 						{
 							url: "http://classic.dzzzr.ru/moscow/?section=registr",
 							jar: Engine.cookie,
-							form: {
+							encoding: 'binary',
+							formData: {
 								action: "update_user",
 								section: 'registr',
-								name: string_to_write.hexEncode(),
+								name: iconv.encode(string_to_write, 'cp1251'),
 								login: 'Vbyec',
 								email_1: 'Vbyec.aka.minus@gmail.com',
 								phone: '8-926-886-07-54'
 							}
-						}, (error, response) => {
+						}, (error, response, body) => {
 							if (!error && response.statusCode == 200) {
-								this.request.get({
-									url: "http://classic.dzzzr.ru/moscow/?section=registr",
-									encoding: 'binary',
-									jar: this.cookie
-								}, (error, response, body) => {
-									body = iconv.decode(body, 'win1251');
-									$ = cheerio.load(body);
-									$('input[name="name"]').val().should.be.equal(string_to_write);
-									done();
-								});
+								body = iconv.decode(body, 'win1251');
+								$ = cheerio.load(body);
+								$('input[name="name"]').val().should.be.equal(string_to_write);
+								done();
 							}
 						}
 					)

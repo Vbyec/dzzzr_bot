@@ -45,8 +45,8 @@ var ClassicEngine = function (configuration,bot) {
 			request.post(
 				{
 					uri: "http://mera.dozormsk.com/232p/index.php",
-					form: {
-						code: code.hexEncode(),
+					formData: {
+						cod: iconv.encode(code, 'cp1251'),
 						level: ClassicEngine.level
 					}
 				}, function (error, response, body) {

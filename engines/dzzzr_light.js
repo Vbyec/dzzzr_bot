@@ -11,7 +11,7 @@ var request = require('request').defaults({
 iconv.skipDecodeWarning = true;
 
 var LightEngine = function (configuration, bot) {
-	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^!\..*)/i;
+	this.code_regex = /(^[1-9]*d[1-9]*r[1-9]*$)|(^[1-9]*r[1-9]*d[1-9]*$)|(^[1-9]*д[1-9]*р[1-9]*$)|(^[1-9]*р[1-9]*д[1-9]*$)|(^\..*)/i;
 	this.location_regex = /\d{2}[.,]\d{2,8}.{1,3}\d{2}[.,]\d{2,8}/i;
 	this.name = 'light';
 	this.city = configuration.light.city || 'moscow';
@@ -94,8 +94,8 @@ var LightEngine = function (configuration, bot) {
 			{
 				uri: "http://lite.dzzzr.ru/" + this.city + "/go/?pin=" + configuration.light.pin,
 				followRedirect: true,
-				form: {
-					cod: code.hexEncode(),
+				formData: {
+					cod: iconv.encode(code, 'cp1251'),
 					action: "entcod",
 					pin: configuration.light.pin
 				}
