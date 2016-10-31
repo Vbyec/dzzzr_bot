@@ -197,7 +197,7 @@ VoteClass.prototype = {
         };
         let reviews = [];
         return new Promise(resolve=> {
-                this.UserVoteDB.find({vote_id: vote_id.toObjectId()}).then(a=> {
+                this.UserVoteDB.find({vote_id: vote_id}).then(a=> {
                     a.forEach(el=> {
                             list.push({
                                 hq: el.hq,
