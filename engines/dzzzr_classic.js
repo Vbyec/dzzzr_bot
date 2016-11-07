@@ -216,6 +216,7 @@ var ClassicEngine = function (configuration, bot) {
 			{
 				uri: "http://classic.dzzzr.ru/" + this.city + "/go/",
 				jar:this.cookie,
+				encoding: 'binary',
 				formData: {
 					cod: iconv.encode(code, 'cp1251'),
 					action: "entcod"
