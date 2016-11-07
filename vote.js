@@ -256,9 +256,9 @@ VoteClass.prototype = {
 
                 let result_message = "<b>Результаты:</b>\n" +
                     `Всего проголосовало ${stat.result.total} человек\n` +
-                    `За <i>штаб</i> выставлено ${stat.result.hq.count} оценок с средним балом ${stat.result.hq.count ? (stat.result.hq.summary / stat.result.hq.count).toFixed(1) : "-"}\n` +
-                    `За <i>поле</i> выставлено ${stat.result.field.count} оценок с средним балом ${ stat.result.field.count ? (stat.result.field.summary / stat.result.field.count).toFixed(1) : "-"}\n` +
-                    `Средний между полем и штабом: ${stat.result.hq.count && stat.result.field.count ? (((stat.result.hq.count ? (stat.result.hq.summary / stat.result.hq.count) : 0) + (stat.result.field.count ? (stat.result.field.summary / stat.result.field.count) : 0)) / (~~!!stat.result.field.count + ~~!!stat.result.hq.count)).toFixed(1) : "-"}\n` +
+                    `За <i>штаб</i> выставлено ${stat.result.hq.count} оценок с средним балом ${stat.result.hq.count ? (stat.result.hq.summary / stat.result.hq.count).toFixed(2) : "-"}\n` +
+                    `За <i>поле</i> выставлено ${stat.result.field.count} оценок с средним балом ${ stat.result.field.count ? (stat.result.field.summary / stat.result.field.count).toFixed(2) : "-"}\n` +
+                    `Средний между полем и штабом: ${stat.result.hq.count && stat.result.field.count ? (((stat.result.hq.count ? (stat.result.hq.summary / stat.result.hq.count) : 0) + (stat.result.field.count ? (stat.result.field.summary / stat.result.field.count) : 0)) / (~~!!stat.result.field.count + ~~!!stat.result.hq.count)).toFixed(2) : "-"}\n` +
                     "Гонорар авторам:\n" +
                     `- 0% ${stat.result.author_fee[0]} голосов\n` +
                     `- 50% ${stat.result.author_fee[50]} голосов\n` +
