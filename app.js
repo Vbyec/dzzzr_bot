@@ -1,30 +1,30 @@
 var BotClass = require('./bot'),
-    mongoose = require('mongoose'),
-    Schema = mongoose.Schema,
-    db_connection = mongoose.createConnection('mongodb://localhost/Global');
+	mongoose = require('mongoose'),
+	Schema = mongoose.Schema,
+	db_connection = mongoose.createConnection('mongodb://localhost/Global');
 mongoose.Promise = global.Promise;
 
 var TeamsSchema = new Schema({
-    token: String,
-    admin_user: Array,
-    registered_chat_ids: Array,
-    bot_name: String,
-    light: {
-        pin: String
-    },
-    classic: {
-        login: String,
-        city: String,
-        password: String,
-        http_login: String,
-        pin: String
-    },
-    mera: {
-        login: String,
-        password: String
-    },
-    log_path: { type: String, default: "/var/log/dzzzr_telegram"},
-    engine: String
+	token: String,
+	admin_user: [{id: Number, username: String}],
+	registered_chat_ids: Array,
+	bot_name: String,
+	light: {
+		pin: String
+	},
+	classic: {
+		login: String,
+		city: String,
+		password: String,
+		http_login: String,
+		pin: String
+	},
+	mera: {
+		login: String,
+		password: String
+	},
+	log_path: {type: String, default: "/var/log/dzzzr_telegram"},
+	engine: String
 });
 
 db_connection.model('Teams', TeamsSchema);

@@ -4,7 +4,6 @@ var Engine = {},
 	iconv = require('iconv-lite'),
 	TestTeam = require('./TestTeam'),
 	cheerio = require('cheerio');
-//iconv.skipDecodeWarning = true;
 var test_team = new TestTeam();
 
 
@@ -17,7 +16,7 @@ describe('Dozor classic', function () {
 	});
 
 	describe('#Matching codes from chat', function () {
-		it('should be matched', ()=> ['12rd', '1рд2', '12рд', 'др2345', '!.привет', '!.Hi'].forEach(el=>el.should.match(Engine.code_regex)));
+		it('should be matched', ()=> ['12rd', '1рд2', '12рд', 'др2345', '.привет', '.Hi'].forEach(el=>el.should.match(Engine.code_regex)));
 		it('should not be matched', ()=> ['12рd', '12', '120рд', '120rd', 'Привет'].forEach(el=>el.should.not.match(Engine.code_regex)));
 	});
 

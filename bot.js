@@ -42,14 +42,23 @@ var BotClass = function (configuration) {
 		this.commands.push(new Command(regexp, need_admin, need_registered, callback, this, description));
 	};
 
-	this.removeAdmin = function (user) {
-		this.configuration.admin_user.indexOf(user) > -1 && this.configuration.admin_user.splice(this.configuration.admin_user.indexOf(user), 1);
-		this.configuration.save();
+	this.removeAdmin = function (username) {
+		if (index = this.configuration.admin_user.findIndex(user=>user.username == username)) this.configuration.admin_user.splice(index, 1);
+		return this.configuration.save();
 	};
 	this.addAdmin = function (user) {
-		this.configuration.admin_user.push(user);
-		this.configuration.admin_user = this.configuration.admin_user.unique();
-		this.configuration.save();
+		this.configuration.admin_user = this.configuration.admin_user.filter(admin_user=>admin_user.username != user);
+		this.configuration.admin_user.push({id: null, username: user});
+		return this.configuration.save();
+	};
+
+	this.getAdminWithoutId = function () {
+		return this.configuration.admin_user.filter(user=>!user.id);
+	};
+
+	this.addAdminId = function (username, id) {
+		this.configuration.admin_user.find(user=>user.username == username).id = id;
+		return this.configuration.save();
 	};
 
 	this.addRegisteredChat = function (chat_id) {
@@ -58,9 +67,8 @@ var BotClass = function (configuration) {
 		this.configuration.save();
 	};
 
-	// @todo Переписать эти методы на использование списка админов
-	this.notifyAllAdmins = msg=>this.configuration.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, msg));
-	this.notifyErrorAllAdmins = msg=>this.configuration.registered_chat_ids.forEach((chat_id) =>this.telegram_class.sendMessage(chat_id, '❗️❗️❗️<b>' + msg + '</b>❗️❗️❗️', {parse_mode: 'HTML'}));
+	this.notifyAllAdmins = msg=>this.configuration.admin_user.forEach((user) =>user.id && this.telegram_class.sendMessage(user.id, msg, {parse_mode: 'HTML'}));
+	this.notifyErrorAllAdmins = msg=>this.notifyAllAdmins('❗️❗️❗️<b>' + msg + '</b>❗️❗️❗️');
 
 	// Задаем стартовые значения переменным бота
 	this.commands = [];
@@ -90,6 +98,9 @@ var BotClass = function (configuration) {
 			if (this.current_vote.haveTextArea(msg.chat.id)) {
 				this.current_vote.setAnswer(msg.chat.id, null, msg.text);
 			}
+			// Check if new admin and add it ID
+			if (this.getAdminWithoutId().find(user=>user.username == msg.from.username)) this.addAdminId(msg.from.username, msg.from.id);
+
 			var command = this.commands.find(command=>msg.text && command.regexp.exec(msg.text.trim().toLowerCase().replace('@' + this.name, '')));
 			if (command === undefined) return true;
 			command.registerInLog()
@@ -132,7 +143,7 @@ var BotClass = function (configuration) {
 		this.addRegisteredChat(msg.chat.id);
 		this.telegram_class.reply(msg, "Чат зарегистрирован.");
 	}, "Регистрирует текущий чат как разрешенный.");
-	this.addCommand(/^\/admin_user_list$/, true, false, msg => this.telegram_class.answer(msg, this.configuration.admin_user.map(el=>"@" + el).join("\n")), "Показывает список админов бота.");
+	this.addCommand(/^\/admin_user_list$/, true, false, msg => this.telegram_class.answer(msg, this.configuration.admin_user.map(el=>"@" + el.username).join("\n")), "Показывает список админов бота.");
 
 	this.addCommand(/^\/admin_user_add/, true, false, msg => {
 		assertNotEmpty(msg.text.match(/.*\s(.*)/), "Не указан пользователь.");

@@ -14,7 +14,7 @@ Command.prototype = {
 		return this;
 	},
 	checkAdmin: function (username) {
-		assertNotEmpty(!(this.need_admin && this.bot.configuration.admin_user.indexOf(username) == -1), "Недостаточно прав");
+		assertNotEmpty(!(this.need_admin && (this.bot.configuration.admin_user.findIndex(user=> user.username == username) == -1)), "Недостаточно прав");
 		return this;
 	},
 	checkRegisteredChat: function (chat_id) {
