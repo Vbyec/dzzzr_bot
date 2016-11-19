@@ -241,7 +241,13 @@ var ClassicEngine = function (configuration, bot) {
 										})
 									}
 								));
+								//@fixme Убрать через игру
 								self.bot.logger.info(old_list, diff, new_list);
+								if (diff.length == 1) {
+									answer = diff[0].name == 'Основные коды' ? "✅ <i>Принят основной код</i>" : "✅ <i>Принят бонусный код</i>";
+									answer+=`\n<b>КО:</b> ${diff.difficult}`
+									answer+=`\n<b>Метка:</b> ${diff.index}`
+								}
 							}
 							callback({text: answer, done: done});
 						}
