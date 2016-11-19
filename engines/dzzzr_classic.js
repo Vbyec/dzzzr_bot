@@ -233,11 +233,14 @@ var ClassicEngine = function (configuration, bot) {
 							if (response_code == 8 || response_code == 9 || response_code == 16) {
 								let diff = [];
 								let new_list = self.getCodeList(page);
-								new_list.forEach((el, index)=> el.list.forEach((code, code_index)=>  code.done != old_list[index].list[code_index] && diff.push({
-									name: el.name,
-									index: code.index,
-									difficult: code.difficult
-								})));
+								new_list.forEach((el, index)=> el.list.forEach((code, code_index)=> {
+										if (code.done != old_list[index].list[code_index]) diff.push({
+											name: el.name,
+											index: code.index,
+											difficult: code.difficult
+										})
+									}
+								));
 								self.bot.logger.info(old_list, diff, new_list);
 							}
 							callback({text: answer, done: done});
