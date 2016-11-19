@@ -238,7 +238,7 @@ var ClassicEngine = function (configuration, bot) {
 											name: el.name,
 											index: code.index,
 											difficult: code.difficult
-										})
+										});
 									}
 								));
 								//@fixme Убрать через игру
@@ -246,8 +246,8 @@ var ClassicEngine = function (configuration, bot) {
 								self.bot.logger.info(diff);
 								if (diff.length == 1) {
 									answer = diff[0].name == 'Основные коды' ? "✅ <i>Принят основной код</i>" : "✅ <i>Принят бонусный код</i>";
-									answer += `\n<b>КО:</b> ${diff[0].difficult}`
-									answer += `\n<b>Метка:</b> ${diff[0].index}`
+									answer += `\n<b>КО:</b> ` + diff[0].difficult;
+									answer += `\n<b>Метка:</b> ` + diff[0].index;
 								}
 							}
 							callback({text: answer, done: done});
