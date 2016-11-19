@@ -234,7 +234,7 @@ var ClassicEngine = function (configuration, bot) {
 								let diff = [];
 								let new_list = self.getCodeList(page);
 								new_list.forEach((el, index)=> el.list.forEach((code, code_index)=> {
-										if (code.done != old_list[index].list[code_index]) diff.push({
+										if (code.done != old_list[index].list[code_index].done) diff.push({
 											name: el.name,
 											index: code.index,
 											difficult: code.difficult
