@@ -9,7 +9,7 @@ var ClassicEngine = function (configuration, bot) {
 	this.bot = bot;
 	this.city = configuration.classic.city || 'moscow';
 	this.watcher = {};
-	this.cookie={};
+	this.cookie = {};
 	this.setRequest = function () {
 		this.request = require('request').defaults({
 			followAllRedirects: true,
@@ -21,7 +21,7 @@ var ClassicEngine = function (configuration, bot) {
 				pass: configuration.classic.pin
 			}
 		});
-		this.cookie=this.request.jar();
+		this.cookie = this.request.jar();
 		return this;
 	};
 	this.response_codes = {
@@ -145,7 +145,7 @@ var ClassicEngine = function (configuration, bot) {
 			this.request.get(
 				{
 					url: "http://classic.dzzzr.ru/" + this.city + "/",
-					jar:this.cookie
+					jar: this.cookie
 				}, (error, response, body) => {
 					if (response.statusCode == 200) {
 						resolve(' no CloudFlare');
@@ -178,7 +178,7 @@ var ClassicEngine = function (configuration, bot) {
 						this.request.get(
 							{
 								url: buildUrl("http://classic.dzzzr.ru/cdn-cgi/l/chk_jschl", form),
-								jar:this.cookie
+								jar: this.cookie
 							}, (error, response) => {
 								response.statusCode == 200 ? resolve(response.statusMessage) : reject(response.statusMessage);
 							});
@@ -194,7 +194,7 @@ var ClassicEngine = function (configuration, bot) {
 				{
 					url: "http://classic.dzzzr.ru/" + this.city + "/",
 					encoding: 'binary',
-					jar:this.cookie,
+					jar: this.cookie,
 					form: {
 						action: "auth",
 						login: configuration.classic.login,
@@ -212,25 +212,39 @@ var ClassicEngine = function (configuration, bot) {
 	};
 	this.sendCode = function (code, callback) {
 		var self = this;
-		this.request.post(
-			{
-				uri: "http://classic.dzzzr.ru/" + this.city + "/go/",
-				jar:this.cookie,
-				encoding: 'binary',
-				formData: {
-					cod: iconv.encode(code, 'cp1251'),
-					action: "entcod"
-				}
-			}, function (error, response, body) {
-				var response_code = response.request.uri.search.match(/&err=(\d{1,2})/)[1];
-				if (!error && response.statusCode == 200) {
-					body = iconv.decode(body, 'win1251');
-					let answer = self.response_codes[response_code] ? self.response_codes[response_code] : self.getAnswer(body);
-					let done = response_code == 5 || response_code == 9;
-					callback({text: answer, done: done});
-				}
-			}
-		);
+		this.getPage().then(
+				page => {
+				let old_list = this.getCodeList(page);
+				this.request.post(
+					{
+						uri: "http://classic.dzzzr.ru/" + this.city + "/go/",
+						jar: this.cookie,
+						encoding: 'binary',
+						formData: {
+							cod: iconv.encode(code, 'cp1251'),
+							action: "entcod"
+						}
+					}, function (error, response, body) {
+						var response_code = response.request.uri.search.match(/&err=(\d{1,2})/)[1];
+						if (!error && response.statusCode == 200) {
+							body = iconv.decode(body, 'win1251');
+							let answer = self.response_codes[response_code] ? self.response_codes[response_code] : self.getAnswer(body);
+							let done = response_code == 5 || response_code == 9;
+							if (response_code == 8 || response_code == 9 || response_code == 16) {
+								let diff = [];
+								let new_list = self.getCodeList(page);
+								new_list.forEach((el, index)=> el.list.forEach((code, code_index)=>  code.done != old_list[index].list[code_index] && diff.push({
+									name: el.name,
+									index: code.index,
+									difficult: code.difficult
+								})));
+								self.bot.logger.info(old_list, diff, new_list);
+							}
+							callback({text: answer, done: done});
+						}
+					}
+				);
+			});
 	};
 	this.getAnswer = function (page) {
 		$ = cheerio.load(page);
@@ -288,8 +302,8 @@ var ClassicEngine = function (configuration, bot) {
 			this.request.get({
 				url: "http://classic.dzzzr.ru/" + this.city + "/go",
 				encoding: 'binary',
-				jar:this.cookie
-			},  (error, response, body) =>{
+				jar: this.cookie
+			}, (error, response, body) => {
 				if (response.statusCode == 401) reject('Game auth: false');
 				body = iconv.decode(body, 'win1251');
 				if (match = body.match(/начнется (.+).<br>Ждем вас к началу игры/))reject('Игра еще не началась. Старт ' + match[1]);
