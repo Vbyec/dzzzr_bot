@@ -232,7 +232,7 @@ var ClassicEngine = function (configuration, bot) {
 							let done = response_code == 5 || response_code == 9;
 							if (response_code == 8 || response_code == 9 || response_code == 16) {
 								let diff = [];
-								let new_list = self.getCodeList(page);
+								let new_list = self.getCodeList(body);
 								new_list.forEach((el, index)=> el.list.forEach((code, code_index)=> {
 										self.bot.logger.info(code, index, old_list[index].list.find(old_code=>old_code.index == code.index));
 										if (code.done != old_list[index].list.find(old_code=>old_code.index == code.index).done) diff.push({
