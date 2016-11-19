@@ -234,7 +234,7 @@ var ClassicEngine = function (configuration, bot) {
 								let diff = [];
 								let new_list = self.getCodeList(page);
 								new_list.forEach((el, index)=> el.list.forEach((code, code_index)=> {
-										if (code.done != old_list[index].list[code_index].done) diff.push({
+										if (code.done != old_list[index].list.find(old_code=>old_code.index == code_index).done) diff.push({
 											name: el.name,
 											index: code.index,
 											difficult: code.difficult
@@ -245,8 +245,8 @@ var ClassicEngine = function (configuration, bot) {
 								self.bot.logger.info(old_list, diff, new_list);
 								if (diff.length == 1) {
 									answer = diff[0].name == 'Основные коды' ? "✅ <i>Принят основной код</i>" : "✅ <i>Принят бонусный код</i>";
-									answer+=`\n<b>КО:</b> ${diff.difficult}`
-									answer+=`\n<b>Метка:</b> ${diff.index}`
+									answer += `\n<b>КО:</b> ${diff.difficult}`
+									answer += `\n<b>Метка:</b> ${diff.index}`
 								}
 							}
 							callback({text: answer, done: done});
