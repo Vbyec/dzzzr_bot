@@ -233,8 +233,7 @@ var ClassicEngine = function (configuration, bot) {
 							if (response_code == 8 || response_code == 9 || response_code == 16) {
 								let diff = [];
 								let new_list = self.getCodeList(body);
-								new_list.forEach((el, index)=> el.list.forEach((code, code_index)=> {
-										self.bot.logger.info(code, index, old_list[index].list.find(old_code=>old_code.index == code.index));
+								new_list.forEach((el, index)=> el.list.forEach(code=> {
 										if (code.done != old_list[index].list.find(old_code=>old_code.index == code.index).done) diff.push({
 											name: el.name,
 											index: code.index,
@@ -244,10 +243,11 @@ var ClassicEngine = function (configuration, bot) {
 								));
 								//@fixme Убрать через игру
 								//self.bot.logger.info(old_list, diff, new_list);
+								self.bot.logger.info(diff);
 								if (diff.length == 1) {
 									answer = diff[0].name == 'Основные коды' ? "✅ <i>Принят основной код</i>" : "✅ <i>Принят бонусный код</i>";
-									answer += `\n<b>КО:</b> ${diff.difficult}`
-									answer += `\n<b>Метка:</b> ${diff.index}`
+									answer += `\n<b>КО:</b> ${diff[0].difficult}`
+									answer += `\n<b>Метка:</b> ${diff[0].index}`
 								}
 							}
 							callback({text: answer, done: done});
