@@ -1,5 +1,6 @@
 var iconv = require('iconv-lite'),
 	Entities = require('html-entities').AllHtmlEntities,
+	striptags = require('striptags'),
 	cheerio = require('cheerio');
 iconv.skipDecodeWarning = true;
 entities = new Entities();
@@ -230,6 +231,7 @@ var ClassicEngine = function (configuration, bot) {
 							body = iconv.decode(body, 'win1251');
 							let answer = self.response_codes[response_code] ? self.response_codes[response_code] : self.getAnswer(body);
 							let done = response_code == 5 || response_code == 9;
+							// Если код верный...
 							if (response_code == 8 || response_code == 9 || response_code == 16) {
 								let diff = [];
 								let new_list = self.getCodeList(body);
@@ -279,7 +281,7 @@ var ClassicEngine = function (configuration, bot) {
 				sectors[i].replace(/бонусные коды:/, "").split(',').forEach(function (element, index) {
 					sector.list.push({
 						index: index + 1,
-						difficult: element.trim(),
+						difficult: striptags(element.trim()),
 						done: element.trim().substring(0, 5) == "<span"
 					});
 				});
@@ -290,7 +292,7 @@ var ClassicEngine = function (configuration, bot) {
 				sectors[i].replace(/основные коды:/, "").split(',').forEach(function (element, index) {
 					sector.list.push({
 						index: index + 1,
-						difficult: element.trim(),
+						difficult: striptags(element.trim()),
 						done: element.trim().substring(0, 5) == "<span"
 					});
 				});
