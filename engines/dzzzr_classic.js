@@ -245,9 +245,12 @@ var ClassicEngine = function (configuration, bot) {
 								//self.bot.logger.info(old_list, diff, new_list);
 								self.bot.logger.info(diff);
 								if (diff.length == 1) {
-									answer = diff[0].name == 'Основные коды' ? "✅ <i>Принят основной код</i>" : "✅ <i>Принят бонусный код</i>";
-									answer += `\n<b>КО:</b> ` + diff[0].difficult;
-									answer += `\n<b>Метка:</b> ` + diff[0].index;
+									let new_code = diff[0];
+									self.bot.logger.info(new_code);
+									answer = new_code.name == 'Основные коды' ? "✅ <i>Принят основной код</i>" : "✅ <i>Принят бонусный код</i>";
+									answer += `\n<b>КО:</b> ` + new_code.difficult;
+									answer += `\n<b>Метка:</b> ` + new_code.index;
+									self.bot.logger.info(answer);
 								}
 							}
 							callback({text: answer, done: done});
