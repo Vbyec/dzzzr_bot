@@ -1,0 +1,19 @@
+{
+  "token": "your_token",
+  "admin_user": [
+    {
+      "id": 23225855,
+      "username": "Vbyec"
+    }
+  ],
+  "registered_chat_ids": [],
+  "bot_name": "",
+  "log_path": "bot_logs",
+  "engine": "dzzzr_classic",
+  "classic": {
+    "login": "",
+    "password": "",
+    "http_login": "",
+    "pin": ""
+  }
+}
