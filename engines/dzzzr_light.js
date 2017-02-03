@@ -19,7 +19,8 @@ var LightEngine = function (configuration, bot) {
 
 	this.init = function () {
 		this.bot.addCommand(this.code_regex, false, true, msg => {
-			var code = msg.text.match(this.code_regex)[0].toLowerCase().replace('д', 'd').replace('р', 'r').replace(/^\./, '');
+            var code = msg.text.match(this.code_regex)[0].toLowerCase();
+            code = code.match(/^\./) ? code.replace(/^\./, '') : code.replace('д', 'd').replace('р', 'r');
 			if (this.bot.allow_code && code.length > 2) {
 				this.sendCode(code, (response) => {
 					this.bot.telegram_class.reply(msg, response);
