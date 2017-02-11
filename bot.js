@@ -72,7 +72,7 @@ var BotClass = function (configuration) {
 
 	// Задаем стартовые значения переменным бота
 	this.commands = [];
-	this.name = configuration.bot_name;
+    this.name = configuration.bot_name.toLowerCase();
 	this.allow_code = 0;
 	this.location_regex = /\d{2}\.\d{4,8}.{1,3}\d{2}\.\d{4,8}/i;
 
