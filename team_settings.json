@@ -1,5 +1,5 @@
 {
-  "token": "your_token",
+  "token": "214223262:AAETf1NMnhJdvXqgCdvsQJAqQ3lsplHuUec",
   "admin_user": [
     {
       "id": 23225855,
@@ -7,13 +7,13 @@
     }
   ],
   "registered_chat_ids": [],
-  "bot_name": "",
+  "bot_name": "jat_dzzzr_bot",
   "log_path": "bot_logs",
   "engine": "dzzzr_classic",
   "classic": {
-    "login": "",
-    "password": "",
-    "http_login": "",
-    "pin": ""
+    "login": "Helper",
+    "password": "MDMHDEX",
+    "http_login": "moscow_VolandMaster",
+    "pin": "466139"
   }
 }
