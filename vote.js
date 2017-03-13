@@ -272,6 +272,7 @@ VoteClass.prototype = {
 					let user_name = el.user_name == null ? "" : ` (@${el.user_name})`;
 					reviews_message += `«${el.comment}» — ${first_name}${last_name}${user_name}\n\n`;
 				});
+				console.log(reviews_message)
 				resolve([list_message, result_message, reviews_message]);
 			});
 		})
