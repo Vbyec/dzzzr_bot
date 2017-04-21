@@ -1,31 +1,16 @@
-/**
- * Created by vbyec on 16.10.16.
- */
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
-mongoose.Promise = global.Promise;
+let DataStore = require('nedb-promise'),
+    usersInChatDB = new DataStore({filename: 'db/UsersInChat', autoload: true});
 
-var UsersInChatSchema = new Schema({
-    user_id: Number,
-    chat_id: Number,
-    user_name: String,
-    first_name: String,
-    last_name: String,
-    voted: false
-});
-
-var UsersInChat = function (db_connection) {
-    db_connection.model('UsersInChat', UsersInChatSchema);
-    this.usersInChat = db_connection.model('UsersInChat');
+let UsersInChat = function () {
     return this;
 };
 
 UsersInChat.prototype = {
     getUsersInChat: function (chat_id) {
-        return new Promise(resolve=>this.usersInChat.find({chat_id: chat_id}).then(resolve));
+        return usersInChatDB.find({chat_id: chat_id});
     },
-    save:function (NewData,chat_id,user_id) {
-        this.usersInChat.findOneAndUpdate({chat_id: chat_id, user_id: user_id}, NewData, {upsert: true}, ()=>a = 1);
+    save: function (data) {
+        usersInChatDB.update({chat_id: data.chat_id, user_id: data.user_id}, data, {upsert: true});
     }
 };
 

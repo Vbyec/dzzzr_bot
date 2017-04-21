@@ -9,9 +9,9 @@ Array.prototype.unique = function () {
 };
 
 global.assertNotEmpty = function () {
-	var message = arguments.length > 1 ? arguments[arguments.length - 1] : "Variable is empty";
+	let message = arguments.length > 1 ? arguments[arguments.length - 1] : "Variable is empty";
 	delete arguments[arguments.length - 1];
-	for (var key in  arguments) {
+	for (let key in  arguments) {
 		if (arguments.hasOwnProperty(key) && !arguments[key]) {
 			throw new Error(message);
 		}

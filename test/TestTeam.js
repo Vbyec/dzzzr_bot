@@ -24,8 +24,8 @@ var mongoose = require('mongoose'),
         engine: String
     });
 mongoose.Promise = global.Promise;
-db_connection.model('Teams', TeamsSchema);
-var TeamsInDB = db_connection.model('Teams');
+db_connection.model('TeamSettings', TeamsSchema);
+var TeamsInDB = db_connection.model('TeamSettings');
 
 
 var Team = function () {

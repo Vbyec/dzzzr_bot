@@ -31,8 +31,8 @@ var TeamsSchema = new Schema({
 	engine: String
 });
 
-db_connection.model('Teams', TeamsSchema);
-var TeamsInDB = db_connection.model('Teams');
+db_connection.model('TeamSettings', TeamsSchema);
+var TeamsInDB = db_connection.model('TeamSettings');
 
 describe('Bot Class', function () {
 	before(function (done) {

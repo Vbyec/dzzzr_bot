@@ -1,64 +1,34 @@
 require('./functions');
-
-var mongoose = require('mongoose'),
-    DzzzrVoteQuestion = require('./dzzzr_vote_question'),
+let DzzzrVoteQuestion = require('./dzzzr_vote_question'),
     UsersInChatClass = require('./usersInChat'),
-    Schema = mongoose.Schema;
-mongoose.Promise = global.Promise;
+    DataStore = require('nedb-promise');
 
-var VoteSchema = new Schema({
-    name: String,
-    active: Boolean
-});
-
-var UserVoteSchema = new Schema({
-    user_id: Number,
-    chat_id: Number,
-    vote_id: Schema.ObjectId,
-    user_name: String,
-    first_name: String,
-    last_name: String,
-    hq: {type: Number, 'default': null},
-    field: {type: Number, 'default': null},
-    author_fee: {type: Number, 'default': null},
-    comment: String
-});
-
-var VoteClass = function (telegram_class, bot_name, db_connection) {
+let VoteClass = function (telegram_class) {
     this.questions = new DzzzrVoteQuestion(this).get();
     this.telegram_class = telegram_class;
-    this.bot_name = bot_name;
     this.chats = [];
     this.name = "";
-    this.usersInChat = new UsersInChatClass(db_connection);
+    this.usersInChat = new UsersInChatClass();
 
-    db_connection.model('Vote', VoteSchema);
-    db_connection.model('UserVote', UserVoteSchema);
-
-    this.VoteDB = db_connection.model('Vote');
-    this.UserVoteDB = db_connection.model('UserVote');
+    this.VoteDB = new DataStore({filename: 'db/Vote', autoload: true});
+    this.UserVoteDB = new DataStore({filename: 'db/UserVote', autoload: true});
 
     return this;
 };
 
 VoteClass.prototype = {
     create: function (name) {
-        return new Promise(resolve => {
-            var Vote = new this.VoteDB();
-            this.name = name;
-            Vote.name = name;
-            Vote.active = true;
-            Vote.save().then(record => resolve(record.id));
-        })
+        this.name = name;
+        return this.VoteDB.insert({name: name, active: true});
     },
     close: function (id) {
-        return new Promise(resolve => this.VoteDB.findByIdAndUpdate(id, {$set: {active: false}}, {'new': true}, msg => resolve()));
+        return this.VoteDB.update({_id: id}, {$set: {active: false}});
     },
     get: function (id) {
-        return new Promise((resolve, reject) => this.VoteDB.findById(id).then(record => record.active ? resolve(record) : reject("Выставление оценок уже завершено")).catch(record => reject("Не удалось найти такой опрос")));
+        return new Promise((resolve, reject) => this.VoteDB.findOne({_id: id}).then(record => record.active ? resolve(record) : reject("Выставление оценок уже завершено")).catch(record => reject("Не удалось найти такой опрос")));
     },
     getActiveVoteId: function () {
-        return this.getActiveVote().then(vote => vote.id);
+        return this.getActiveVote().then(vote => vote._id);
     },
     getActiveVote: function () {
         return new Promise((resolve, reject) => this.VoteDB.findOne({active: true}).then(record => {
@@ -66,7 +36,7 @@ VoteClass.prototype = {
         }));
     },
     start: function (chat_id, user_name, first_name, last_name, vote_id) {
-        this.chats.findIndex(el => el.id == chat_id) > -1 && this.chats.splice(this.chats.findIndex(el => el.id == chat_id), 1);
+        this.chats.findIndex(el => el.id === chat_id) > -1 && this.chats.splice(this.chats.findIndex(el => el.id === chat_id), 1);
         this.chats.push({
             id: chat_id,
             user_id: chat_id,
@@ -110,18 +80,15 @@ VoteClass.prototype = {
             comment: current_chat.comment,
             vote_id: current_chat.vote_id
         };
-        this.UserVoteDB.findOneAndUpdate({
-            vote_id: current_chat.vote_id,
-            user_id: current_chat.id
-        }, NewData, {upsert: true}, () => a = 1);
+        this.UserVoteDB.update({vote_id: current_chat.vote_id, user_id: current_chat.id}, NewData, {upsert: true});
         let text =
             `<b>${this.name}</b>\n\n` +
             "<b>Спасибо за участие в выставлении оценок!\n</b>" +
             "<pre>Вы оценили игру так:\n" +
-            (current_chat.hq != null ? `Штаб: ${current_chat.hq}\n` : "") +
-            (current_chat.field != null ? `Поле: ${current_chat.field}\n` : "") +
-            `Взнос авторам: ${current_chat.author_fee}%\n` +
-            (current_chat.comment != null ? `Комментарий: ${current_chat.comment}\n` : "") +
+            (current_chat.hq !== null ? `Штаб: ${current_chat.hq}\n` : "") +
+            (current_chat.field !== null ? `Поле: ${current_chat.field}\n` : "") +
+            (current_chat.author_fee !== null ? `Взнос авторам: ${current_chat.author_fee}%\n` : "") +
+            (current_chat.comment !== null ? `Комментарий: ${current_chat.comment}\n` : "") +
             "</pre>/vote_start -- Если хотите поменять свое мнение";
         this.telegram_class.editMessageText(text, {
             chat_id: chat_id,
@@ -135,16 +102,16 @@ VoteClass.prototype = {
         if (this.findChat(chat_id).current_question >= 0) this.findChat(chat_id).message_id ? this.updateQuestion(chat_id) : this.sendNewQuestion(chat_id);
     },
     findCurrentQuestion: function (chat_id) {
-        return this.questions.find(el => el.id == this.findChat(chat_id).current_question);
+        return this.questions.find(el => el.id === this.findChat(chat_id).current_question);
     },
     findChat: function (chat_id) {
-        return this.chats.find(el => el.id == chat_id);
+        return this.chats.find(el => el.id === chat_id);
     },
     sendAnswer: function (chat_id, query_id, text) {
         query_id ? this.telegram_class.answerCallbackQuery(query_id, text) : this.telegram_class.sendMessage(chat_id, text);
     },
     setAnswer: function (chat_id, query_id, data, message_id = null) {
-        if (message_id && this.findChat(chat_id) === undefined || message_id && this.findChat(chat_id).message_id != message_id) return false;
+        if (message_id && this.findChat(chat_id) === undefined || message_id && this.findChat(chat_id).message_id !== message_id) return false;
         this.findCurrentQuestion(chat_id).callback(chat_id, query_id, data).then(a => this.nextQuestion(chat_id));
     },
     sendNewQuestion: function (chat_id) {
@@ -179,7 +146,7 @@ VoteClass.prototype = {
                 })
                 .then(id => this.getStat(id))
                 .then(function (vote_stats) {
-                    let result = users_in_chat.filter(user => vote_stats.list.findIndex(voted_user => voted_user.user_id == user.user_id) == -1).map(user => user.user_name ? "@" + user.user_name : `${user.first_name} ${user.last_name}`);
+                    let result = users_in_chat.filter(user => vote_stats.list.findIndex(voted_user => voted_user.user_id === user.user_id) === -1).map(user => user.user_name ? "@" + user.user_name : `${user.first_name} ${user.last_name}`);
                     resolve(result);
                 }).catch(reject)
         });
@@ -216,11 +183,11 @@ VoteClass.prototype = {
                                 user_name: el.user_name
                             });
                             result.total++;
-                            if (el.hq != null) {
+                            if (el.hq !== null) {
                                 result.hq.count++;
                                 result.hq.summary += parseInt(el.hq);
                             }
-                            if (el.field != null) {
+                            if (el.field !== null) {
                                 result.field.count++;
                                 result.field.summary += parseInt(el.field);
                             }
@@ -267,10 +234,11 @@ VoteClass.prototype = {
 
                 let reviews_message = "<b>Отзывы:</b>\n";
                 stat.reviews.forEach(el => {
+                    // @todo Заменить на использование html-entities
                     let clear_comment = this.escapeHtml(el.comment);
-                    let first_name = el.first_name == null ? "" : el.first_name;
-                    let last_name = el.last_name == null ? "" : " " + el.last_name;
-                    let user_name = el.user_name == null ? "" : ` (@${el.user_name})`;
+                    let first_name = el.first_name === null ? "" : el.first_name;
+                    let last_name = el.last_name === null ? "" : " " + el.last_name;
+                    let user_name = el.user_name === null ? "" : ` (@${el.user_name})`;
                     reviews_message += `«${clear_comment}» — ${first_name}${last_name}${user_name}\n\n`;
                 });
                 resolve([list_message, result_message, reviews_message]);

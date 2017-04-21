@@ -13,11 +13,9 @@
     "iconv-lite": "0.4.12",
     "log4js": "*",
     "html-entities": "*",
-    "sinon": "*",
     "striptags": "*",
-    "mocha": "*",
-    "should": "*",
-    "mongoose": "*"
+    "nedb": "*",
+    "nedb-promise": "*"
   },
   "repository": {},
   "author": "Vbyec",
