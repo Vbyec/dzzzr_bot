@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Bot</title>
+</head>
+<body>
+
+
+<!-- Insert this line above script imports  -->
+<script>if (typeof module === 'object') {
+    window.module = module;
+    module = undefined;
+}</script>
+<script src="jquery.min.js"></script>
+<!-- Insert this line after script imports -->
+<script>if (window.module) module = window.module;</script>
+<link rel="stylesheet" href="bootstrap.min.css">
+<link rel="stylesheet" href="bootstrap-theme.min.css">
+
+<div class="container">
+    <div class="row">
+
+        <form id="config_form">
+            <table class="table table-hover">
+                <tr>
+                    <td class="col-sm-3"><label for="bot_name">bot_name</label></td>
+                    <td><input id="bot_name" type="text" class="form-control"></td>
+                </tr>
+                <tr>
+                    <td><label for="token">token *</label></td>
+                    <td><input id="token" type="text" class="form-control" required></td>
+                </tr>
+                <tr>
+                    <td><label for="log_path">log_path</label></td>
+                    <td><input id="log_path" type="text" class="form-control" required></td>
+                </tr>
+                <tr>
+                    <td><label for="engine">engine *</label></td>
+                    <td><select id="engine" class="form-control" required>
+                        <option value="dzzzr_classic">Dozor Classic</option>
+                        <option value="dzzzr_light">Dozor Лайт</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td><label for="classic.pin">classic.pin</label></td>
+                    <td><input id="classic.pin" type="text" class="form-control"></td>
+                </tr>
+                <tr>
+                    <td><label for="classic.http_login">classic.http_login</label></td>
+                    <td><input id="classic.http_login" type="text" class="form-control"></td>
+                </tr>
+                <tr>
+                    <td><label for="classic.password">classic.password</label></td>
+                    <td><input id="classic.password" type="text" class="form-control"></td>
+                </tr>
+                <tr>
+                    <td><label for="classic.login">classic.login</label></td>
+                    <td><input id="classic.login" type="text" class="form-control"></td>
+                </tr>
+
+                <tr>
+                    <td><label for="light.pin">light.pin</label></td>
+                    <td><input id="light.pin" type="text" class="form-control"></td>
+                </tr>
+                <tr>
+                    <td><label for="light.city">light.city</label></td>
+                    <td><input id="light.city" type="text" class="form-control"></td>
+                </tr>
+                <tr>
+                    <td><label for="admin_user.0.username">admin_user.0.username *</label></td>
+                    <td><input id="admin_user.0.username" type="text" class="form-control" required></td>
+                </tr>
+                <tr>
+                    <td>
+                        <input id="submit" type="submit" class="btn btn-success" value="Сохранить"></td>
+                    <td>
+                        <button id="start" class="btn btn-info">Выпускайте кракена!</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+
+    </div>
+</div>
+
+
+<script>
+
+    $(document).ready(function () {
+
+        var remote = require('electron').remote;
+        var teamConfig = remote.getGlobal('teamConfig');
+        $('#start').toggle(checkRequired(teamConfig));
+
+        $('#config_form').submit(function () {
+            $('input[type=text],select').each(function (id, el) {
+                let key = $(el).attr('id');
+                let key1 = key.split('.')[0];
+                let key2 = key.split('.')[1];
+                let key3 = key.split('.')[2];
+                if (key3) {
+                    teamConfig[key1][key2][key3] = $(el).val();
+                } else if (key2) {
+                    teamConfig[key1][key2] = $(el).val();
+                } else {
+                    teamConfig[key1] = $(el).val();
+                }
+            });
+
+            teamConfig.save();
+            $('#start').toggle(checkRequired(teamConfig));
+            return false;
+        });
+
+        if (teamConfig) {
+            $('input[type=text],select').each(function (id, el) {
+                let key = $(el).attr('id');
+                let key1 = key.split('.')[0];
+                let key2 = key.split('.')[1];
+                let key3 = key.split('.')[2];
+                let value = '';
+                if (key3) {
+                    value = teamConfig[key1][key2][key3];
+                } else if (key2) {
+                    value = teamConfig[key1][key2]
+                } else {
+                    value = teamConfig[key1];
+                }
+                $(el).val(value);
+            });
+        }
+
+        $('#start').click(function () {
+            $(this).remove();
+            $('#submit').remove();
+            teamConfig.start();
+        })
+
+        function checkRequired(teamConfig) {
+            return !!(teamConfig.token && teamConfig.admin_user[0].username && teamConfig.engine);
+        }
+
+    })
+</script>
+</body>
+</html>

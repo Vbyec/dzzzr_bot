@@ -2,7 +2,7 @@
   "name": "dzzzTelegram",
   "version": "0.0.1",
   "description": "A simple telegram bot for Night game Dozor",
-  "main": "app.js",
+  "main": "main.js",
   "scripts": {
     "start": "screen -S dzzzr_bot -d -m node app.js &"
   },

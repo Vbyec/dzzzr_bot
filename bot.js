@@ -41,11 +41,11 @@ let BotClass = function (config) {
 
     this.removeAdmin = function (username) {
         let index;
-        if (index = this.configuration.admin_user.findIndex(user => user.username === username)) this.configuration.admin_user.splice(index, 1);
+        if (index = this.configuration.admin_user.findIndex(user => user.username.toLowerCase() === username.toLowerCase())) this.configuration.admin_user.splice(index, 1);
         return this.configuration.save();
     };
     this.addAdmin = function (user) {
-        this.configuration.admin_user = this.configuration.admin_user.filter(admin_user => admin_user.username !== user);
+        this.configuration.admin_user = this.configuration.admin_user.filter(admin_user => admin_user.username.toLowerCase() !== user.toLowerCase());
         this.configuration.admin_user.push({id: null, username: user});
         return this.configuration.save();
     };
@@ -55,7 +55,7 @@ let BotClass = function (config) {
     };
 
     this.addAdminId = function (username, id) {
-        this.configuration.admin_user.find(user => user.username === username).id = id;
+        this.configuration.admin_user.find(user => user.username.toLowerCase() === username.toLowerCase()).id = id;
         return this.configuration.save();
     };
 
@@ -98,7 +98,7 @@ let BotClass = function (config) {
                 this.current_vote.setAnswer(msg.chat.id, null, msg.text);
             }
             // Check if new admin and add it ID
-            if (this.getAdminWithoutId().find(user => user.username === msg.from.username)) this.addAdminId(msg.from.username, msg.from.id);
+            if (this.getAdminWithoutId().find(user => user.username.toLowerCase() === msg.from.username.toLowerCase())) this.addAdminId(msg.from.username, msg.from.id);
 
             let command = this.commands.find(command => msg.text && command.regexp.exec(msg.text.trim().toLowerCase().replace('@' + this.name, '')));
             if (command === undefined) return true;
